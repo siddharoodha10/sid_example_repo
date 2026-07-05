@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Logout API RD</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #1d2733;
+      --muted: #5a6675;
+      --line: #d8dee7;
+      --panel: #f6f8fb;
+      --accent: #0f766e;
+      --accent-soft: #e6f4f1;
+      --danger-soft: #fff1f0;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--ink);
+      background: #ffffff;
+      line-height: 1.55;
+    }
+
+    main {
+      width: min(1100px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 32px 0 56px;
+    }
+
+    header {
+      border-bottom: 3px solid var(--accent);
+      margin-bottom: 28px;
+      padding-bottom: 18px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 34px;
+      line-height: 1.15;
+    }
+
+    h2 {
+      margin: 30px 0 12px;
+      font-size: 22px;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 8px;
+    }
+
+    h3 {
+      margin: 20px 0 10px;
+      font-size: 17px;
+    }
+
+    p {
+      margin: 0 0 12px;
+    }
+
+    .meta {
+      color: var(--muted);
+      margin: 0;
+    }
+
+    .note {
+      background: var(--accent-soft);
+      border-left: 4px solid var(--accent);
+      padding: 12px 14px;
+      margin: 14px 0;
+    }
+
+    .warning {
+      background: var(--danger-soft);
+      border-left: 4px solid #dc2626;
+      padding: 12px 14px;
+      margin: 14px 0;
+    }
+
+    .toc {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 14px 16px;
+      margin: 0 0 22px;
+    }
+
+    .toc h2 {
+      border-bottom: 0;
+      margin: 0 0 8px;
+      padding-bottom: 0;
+    }
+
+    .toc ol {
+      columns: 2;
+      margin: 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0 18px;
+      font-size: 14px;
+    }
+
+    th,
+    td {
+      border: 1px solid var(--line);
+      padding: 9px 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: var(--panel);
+      font-weight: 700;
+    }
+
+    code,
+    pre {
+      font-family: Consolas, "Courier New", monospace;
+    }
+
+    code {
+      background: var(--panel);
+      padding: 2px 5px;
+      border-radius: 4px;
+    }
+
+    pre {
+      background: #111827;
+      color: #f9fafb;
+      overflow-x: auto;
+      padding: 14px;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    ul,
+    ol {
+      padding-left: 22px;
+    }
+
+    li {
+      margin: 4px 0;
+    }
+
+    a {
+      color: var(--accent);
+    }
+
+    @media (max-width: 720px) {
+      .toc ol {
+        columns: 1;
+      }
+    }
+
+    @media print {
+      main {
+        width: 100%;
+        padding: 0;
+      }
+
+      pre {
+        white-space: pre-wrap;
+      }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Logout API Requirements Document</h1>
+    <p class="meta">HMS module RD for product, business analysis, development, UI/UX, testing, and review. Updated: 2026-07-02.</p>
+  </header>
+
+  <nav class="toc" aria-labelledby="table-of-contents">
+    <h2 id="table-of-contents">Table of Contents</h2>
+    <ol>
+      <li><a href="#purpose">Purpose</a></li>
+      <li><a href="#scope">Scope</a></li>
+      <li><a href="#actors-and-roles">Actors and Roles</a></li>
+      <li><a href="#product-requirements">Product Requirements</a></li>
+      <li><a href="#business-rules">Business Rules</a></li>
+      <li><a href="#functional-requirements">Functional Requirements</a></li>
+      <li><a href="#api-contract">API Contract</a></li>
+      <li><a href="#ui-ux-requirements">UI/UX Requirements</a></li>
+      <li><a href="#security-rules">Security Rules</a></li>
+      <li><a href="#development-notes">Development Notes</a></li>
+      <li><a href="#test-checklist">Test Checklist</a></li>
+      <li><a href="#acceptance-criteria">Acceptance Criteria</a></li>
+    </ol>
+  </nav>
+
+  <section>
+    <h2 id="purpose">1. Purpose</h2>
+    <p>The Logout feature must allow authenticated HMS users to end their current device session or all active device sessions. After logout, the active access token must be blocklisted so it cannot be reused to perform protected actions.</p>
+    <p class="note">This feature is common for HMS enterprise and pharmacy users. It applies across roles, organisations, and supported dashboards.</p>
+  </section>
+
+  <section>
+    <h2 id="scope">2. Scope</h2>
+    <h3>In Scope</h3>
+    <ul>
+      <li>Current-device logout using <code>POST /v1/api/logout</code>.</li>
+      <li>Backend all-device logout support using <code>POST /v1/api/logout/all</code>.</li>
+      <li>Access-token blocklisting on successful logout.</li>
+      <li>Refresh-token removal for the current device.</li>
+      <li>Frontend confirmation before logout.</li>
+      <li>Redirect to the Login page after successful logout.</li>
+      <li>Common support for admin, staff, pharmacist, HMS patient, and pharmacy customer roles.</li>
+    </ul>
+
+    <h3>Out of Scope</h3>
+    <ul>
+      <li>Changing login, registration, or forgot-password behavior.</li>
+      <li>Changing role-based dashboard authorization.</li>
+      <li>Displaying a full device-management screen.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2 id="actors-and-roles">3. Actors and Roles</h2>
+    <table>
+      <thead>
+        <tr><th>Actor</th><th>Description</th><th>Access</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>All authenticated users</td><td>Any active user with a valid access token.</td><td>Can logout the current device from the UI.</td></tr>
+        <tr><td>HMS enterprise users</td><td>Admin, staff, pharmacist, patient, and future enterprise roles.</td><td>Uses common logout APIs.</td></tr>
+        <tr><td>Pharmacy users</td><td>Pharmacy admin, pharmacist, and pharmacy customer accounts.</td><td>Uses common logout APIs.</td></tr>
+        <tr><td>System</td><td>Backend authentication and token services.</td><td>Blocklists tokens and rejects blocklisted tokens.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2 id="product-requirements">4. Product Requirements</h2>
+    <ul>
+      <li>Logout must be available from authenticated UI surfaces for all roles.</li>
+      <li>User must confirm before the UI calls the logout API.</li>
+      <li>If the user cancels confirmation, the session must continue without token changes.</li>
+      <li>Successful current-device logout must end only the current browser/device session.</li>
+      <li>Logout-all API remains available for backend/API clients but is not exposed as a UI option for now.</li>
+      <li>Successful logout must navigate the user to the Login page.</li>
+      <li>Protected APIs must reject blocklisted access tokens.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2 id="business-rules">5. Business Rules</h2>
+    <table>
+      <thead>
+        <tr><th>ID</th><th>Rule</th><th>Priority</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>BR-001</td><td>All authenticated users can logout using current-device logout.</td><td>Must</td></tr>
+        <tr><td>BR-002</td><td>All authenticated users can logout from all logged-in devices.</td><td>Must</td></tr>
+        <tr><td>BR-003</td><td>Access token must be blocklisted after logout.</td><td>Must</td></tr>
+        <tr><td>BR-004</td><td>Blocklisted access token must not authorize any protected API action.</td><td>Must</td></tr>
+        <tr><td>BR-005</td><td>Current-device logout must remove only the refresh token for the submitted device ID.</td><td>Must</td></tr>
+        <tr><td>BR-006</td><td>Logout-all must remove all refresh tokens associated with the authenticated user.</td><td>Must</td></tr>
+        <tr><td>BR-007</td><td>Logout behavior is common for HMS enterprise and pharmacy accounts.</td><td>Must</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2 id="functional-requirements">6. Functional Requirements</h2>
+    <table>
+      <thead>
+        <tr><th>ID</th><th>Requirement</th><th>Priority</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>FR-001</td><td>User can click Logout from the UI.</td><td>Must</td></tr>
+        <tr><td>FR-002</td><td>UI must show a confirmation dialog before logout is executed.</td><td>Must</td></tr>
+        <tr><td>FR-003</td><td>Confirmation dialog must provide Cancel and Logout actions.</td><td>Must</td></tr>
+        <tr><td>FR-004</td><td>Cancel must close the dialog and preserve the current UI session.</td><td>Must</td></tr>
+        <tr><td>FR-005</td><td>Confirm current-device logout must call <code>POST /v1/api/logout</code>.</td><td>Must</td></tr>
+        <tr><td>FR-006</td><td>UI must not expose a logout-all-devices option for now.</td><td>Must</td></tr>
+        <tr><td>FR-007</td><td>Frontend must clear local auth state after logout completes or after the backend logout request fails.</td><td>Must</td></tr>
+        <tr><td>FR-008</td><td>After logout, the user must be redirected to <code>/login</code>.</td><td>Must</td></tr>
+        <tr><td>FR-009</td><td>Backend must clear the <code>refresh_token</code> cookie on logout responses.</td><td>Must</td></tr>
+        <tr><td>FR-010</td><td>Backend must add the submitted access token to <code>token_blacklist</code>.</td><td>Must</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2 id="api-contract">7. API Contract</h2>
+    <h3>7.1 Logout Current Device</h3>
+    <table>
+      <thead>
+        <tr><th>Method</th><th>Endpoint</th><th>Auth</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>POST</td><td><code>/v1/api/logout</code></td><td>Bearer access token</td><td>Blocklist current access token and delete refresh token for the submitted device ID.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Request</h3>
+    <pre>POST /v1/api/logout?deviceId=web-chrome-01
+Authorization: Bearer &lt;accessToken&gt;
+Cookie: refresh_token=&lt;refreshToken&gt;</pre>
+
+    <h3>Success Response</h3>
+    <pre>200 OK
+Set-Cookie: refresh_token=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax
+
+User logged out successfully</pre>
+
+    <h3>7.2 Logout All Devices Backend API</h3>
+    <p class="note">This API is documented for backend completeness, but the current UI confirmation dialog must not expose a logout-all-devices action.</p>
+    <table>
+      <thead>
+        <tr><th>Method</th><th>Endpoint</th><th>Auth</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>POST</td><td><code>/v1/api/logout/all</code></td><td>Bearer access token</td><td>Delete all refresh tokens for the authenticated user and blocklist current access token.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Request</h3>
+    <pre>POST /v1/api/logout/all
+Authorization: Bearer &lt;accessToken&gt;
+Cookie: refresh_token=&lt;refreshToken&gt;</pre>
+
+    <h3>Success Response</h3>
+    <pre>200 OK
+Set-Cookie: refresh_token=; Max-Age=0; Path=/; HttpOnly; SameSite=Lax
+
+User logged out from all devices successfully</pre>
+  </section>
+
+  <section>
+    <h2 id="ui-ux-requirements">8. UI/UX Requirements</h2>
+    <ul>
+      <li>Logout button must be visible and reachable from authenticated dashboards.</li>
+      <li>Clicking Logout opens a modal confirmation dialog.</li>
+      <li>Dialog copy must make it clear that the session will end.</li>
+      <li>Primary action logs out the current device.</li>
+      <li>Logout-all-devices must not be shown in the confirmation dialog for now.</li>
+      <li>Cancel or closing the dialog must keep the current session active.</li>
+      <li>Dialog must be keyboard and screen-reader friendly using <code>role="dialog"</code> and <code>aria-modal="true"</code>.</li>
+      <li>While logout is in progress, confirmation actions should be disabled to prevent duplicate requests.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2 id="security-rules">9. Security Rules</h2>
+    <ul>
+      <li>Logout APIs require a bearer access token.</li>
+      <li>Access tokens added to <code>token_blacklist</code> must fail authentication on future protected API calls.</li>
+      <li>Refresh token cookie must be cleared after logout.</li>
+      <li>Current-device logout must require the device ID used during login.</li>
+      <li>Logout must remain allowed even when organisation write access is disabled, so users can exit safely.</li>
+      <li>Frontend must not keep stale local session data after logout.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2 id="development-notes">10. Development Notes</h2>
+    <ul>
+      <li>Controller: <code>src/main/java/com/hms/logout/controller/LogoutController.java</code></li>
+      <li>Service: <code>src/main/java/com/hms/logout/service/LogoutService.java</code></li>
+      <li>Implementation: <code>src/main/java/com/hms/logout/service/LogoutServiceImpl.java</code></li>
+      <li>Token blocklist entity: <code>src/main/java/com/hms/logout/entity/TokenBlacklist.java</code></li>
+      <li>Frontend auth service: <code>frontend/hms/src/features/auth/services/authService.js</code></li>
+      <li>Frontend confirmation dialog: <code>frontend/hms/src/components/LogoutConfirmationDialog/LogoutConfirmationDialog.jsx</code></li>
+    </ul>
+  </section>
+
+  <section>
+    <h2 id="test-checklist">11. Test Checklist</h2>
+    <h3>Backend</h3>
+    <ul>
+      <li>Current-device logout returns 200 with a valid bearer token and device ID.</li>
+      <li>Current-device logout inserts access token into <code>token_blacklist</code>.</li>
+      <li>Current-device logout removes only the matching device refresh token.</li>
+      <li>Logout-all removes all refresh tokens for the user.</li>
+      <li>Protected API request with blocklisted token returns unauthorized.</li>
+      <li>Logout APIs clear <code>refresh_token</code> cookie.</li>
+    </ul>
+
+    <h3>Frontend</h3>
+    <ul>
+      <li>Clicking Logout opens the confirmation dialog.</li>
+      <li>Cancel keeps the user on the current dashboard.</li>
+      <li>Confirm Logout calls current-device logout and redirects to Login.</li>
+      <li>Dialog works for admin, pharmacist, and customer dashboards.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2 id="acceptance-criteria">12. Acceptance Criteria</h2>
+    <ul>
+      <li>Given an authenticated user, when they click Logout, then a confirmation dialog is shown.</li>
+      <li>Given the confirmation dialog is open, when the user clicks Cancel, then no logout API is called and the session continues.</li>
+      <li>Given the user confirms Logout, when the API succeeds, then the current token is blocklisted and the UI navigates to Login.</li>
+      <li>Given the confirmation dialog is open, then no logout-all-devices action is displayed for now.</li>
+      <li>Given a blocklisted token, when it is used on any protected API, then the action is rejected.</li>
+      <li>Given any supported HMS enterprise or pharmacy role, when logout is used, then the same common behavior applies.</li>
+    </ul>
+  </section>
+</main>
+</body>
+</html>

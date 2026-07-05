@@ -1,0 +1,940 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Registration API RD</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #1d2733;
+      --muted: #5a6675;
+      --line: #d8dee7;
+      --panel: #f6f8fb;
+      --accent: #0f766e;
+      --accent-soft: #e6f4f1;
+      --danger-soft: #fff1f0;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--ink);
+      background: #ffffff;
+      line-height: 1.55;
+    }
+
+    main {
+      width: min(1100px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 32px 0 56px;
+    }
+
+    header {
+      border-bottom: 3px solid var(--accent);
+      margin-bottom: 28px;
+      padding-bottom: 18px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 34px;
+      line-height: 1.15;
+    }
+
+    h2 {
+      margin: 30px 0 12px;
+      font-size: 22px;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 8px;
+    }
+
+    h3 {
+      margin: 20px 0 10px;
+      font-size: 17px;
+    }
+
+    p {
+      margin: 0 0 12px;
+    }
+
+    .meta {
+      color: var(--muted);
+      margin: 0;
+    }
+
+    .note {
+      background: var(--accent-soft);
+      border-left: 4px solid var(--accent);
+      padding: 12px 14px;
+      margin: 14px 0;
+    }
+
+    .warning {
+      background: var(--danger-soft);
+      border-left: 4px solid #dc2626;
+      padding: 12px 14px;
+      margin: 14px 0;
+    }
+
+    .toc {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 14px 16px;
+      margin: 0 0 22px;
+    }
+
+    .toc h2 {
+      border-bottom: 0;
+      margin: 0 0 8px;
+      padding-bottom: 0;
+    }
+
+    .toc ol {
+      columns: 2;
+      margin: 0;
+    }
+
+    .toc li {
+      break-inside: avoid;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0 18px;
+      font-size: 14px;
+    }
+
+    th,
+    td {
+      border: 1px solid var(--line);
+      padding: 9px 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: var(--panel);
+      font-weight: 700;
+    }
+
+    code,
+    pre {
+      font-family: Consolas, "Courier New", monospace;
+    }
+
+    code {
+      background: var(--panel);
+      padding: 2px 5px;
+      border-radius: 4px;
+    }
+
+    pre {
+      background: #111827;
+      color: #f9fafb;
+      overflow-x: auto;
+      padding: 14px;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    ul,
+    ol {
+      padding-left: 22px;
+    }
+
+    li {
+      margin: 4px 0;
+    }
+
+    a {
+      color: var(--accent);
+    }
+
+    @media (max-width: 720px) {
+      .toc ol {
+        columns: 1;
+      }
+    }
+
+    @media print {
+      main {
+        width: 100%;
+        padding: 0;
+      }
+
+      pre {
+        white-space: pre-wrap;
+      }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Registration API Requirements Document</h1>
+    <p class="meta">HMS module RD for development, testing, and review. Updated: 2026-07-01.</p>
+  </header>
+
+  <nav class="toc" aria-labelledby="table-of-contents">
+    <h2 id="table-of-contents">Table of Contents</h2>
+    <ol>
+      <li><a href="#purpose">Purpose</a></li>
+      <li><a href="#scope">Scope</a></li>
+      <li><a href="#actors-and-roles">Actors and Roles</a></li>
+      <li><a href="#pre-conditions">Pre-Conditions</a></li>
+      <li><a href="#functional-requirements">Functional Requirements</a></li>
+      <li><a href="#api-contract">API Contract</a></li>
+      <li><a href="#organisation-and-package-rules">Organisation and Package Rules</a></li>
+      <li><a href="#database-requirements">Database Requirements</a></li>
+      <li><a href="#validation-rules">Validation Rules</a></li>
+      <li><a href="#error-handling">Error Handling</a></li>
+      <li><a href="#security-rules">Security Rules</a></li>
+      <li><a href="#development-notes">Development Notes</a></li>
+      <li><a href="#test-checklist">Test Checklist</a></li>
+      <li><a href="#acceptance-criteria">Acceptance Criteria</a></li>
+      <li><a href="#resolved-product-decisions">Resolved Product Decisions</a></li>
+    </ol>
+  </nav>
+
+  <section>
+    <h2 id="purpose">1. Purpose</h2>
+    <p>The Registration API creates user accounts for HMS and pharmacy-only organisations. It must support public self-registration for patients and pharmacy customers, and admin-managed creation for staff and organisation users. Every created account must be linked to the correct active organisation and must follow role, uniqueness, activation, and database storage rules.</p>
+  </section>
+
+  <section>
+    <h2 id="scope">2. Scope</h2>
+    <h3>In Scope</h3>
+    <ul>
+      <li>Public <code>PATIENT</code> self-registration for HMS organisations.</li>
+      <li>Public <code>CUSTOMER</code> self-registration for pharmacy organisations.</li>
+      <li>Admin-created accounts for users inside the admin's organisation.</li>
+      <li>HMS role creation for <code>ADMIN</code>, <code>DOCTOR</code>, <code>NURSE</code>, <code>PHARMACIST</code>, <code>LAB_STAFF</code>, <code>BILLING_STAFF</code>, <code>OTHER_STAFF</code>, and <code>PATIENT</code>.</li>
+      <li>Pharmacy-only role creation for <code>ADMIN</code>, <code>PHARMACIST</code>, and <code>CUSTOMER</code>.</li>
+      <li>Organisation active-status validation before registration.</li>
+      <li>Admin active-status validation before admin-created user registration.</li>
+      <li>Uniqueness validation for username, phone number, email address, and staff employee ID where applicable.</li>
+      <li>First-login password-change flow for admin-created users.</li>
+      <li>Database placement rules for enterprise HMS users and pharmacy-only customers.</li>
+      <li>Development, testing, and product acceptance checklist.</li>
+    </ul>
+
+    <h3>Out of Scope</h3>
+    <ul>
+      <li>User login, token refresh, logout, and failed login lockout behavior.</li>
+      <li>Full UI page design beyond required validation and flow behavior.</li>
+      <li>Organisation onboarding and licence management.</li>
+      <li>Payment, billing, appointment, medicine order, or clinical workflows after registration.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2 id="actors-and-roles">3. Actors and Roles</h2>
+    <table>
+      <thead>
+      <tr><th>Actor / Role</th><th>Registration Access</th><th>Notes</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>ADMIN</td><td>Can create users inside own organisation.</td><td>Admin must be logged in, active, and authorised. Admin-created users inherit admin's <code>orgId</code>.</td></tr>
+      <tr><td>PATIENT</td><td>Can self-register.</td><td>Public HMS patient registration. Role must be forced to <code>PATIENT</code>.</td></tr>
+      <tr><td>CUSTOMER</td><td>Can self-register or be created by pharmacy-only admin.</td><td>Role must be forced to <code>CUSTOMER</code> and stored in <code>pharmacyusers</code>.</td></tr>
+      <tr><td>DOCTOR</td><td>Admin-created only.</td><td>Available for HMS organisations.</td></tr>
+      <tr><td>NURSE</td><td>Admin-created only.</td><td>Available for HMS organisations.</td></tr>
+      <tr><td>PHARMACIST</td><td>Admin-created only.</td><td>Available for HMS and pharmacy-only organisations.</td></tr>
+      <tr><td>LAB_STAFF</td><td>Admin-created only.</td><td>Available for HMS organisations.</td></tr>
+      <tr><td>BILLING_STAFF</td><td>Admin-created only.</td><td>Available for HMS organisations.</td></tr>
+      <tr><td>OTHER_STAFF</td><td>Admin-created only.</td><td>Available for HMS organisations.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2 id="pre-conditions">4. Pre-Conditions</h2>
+    <ul>
+      <li>Organisation must exist and have <code>org_status = ACTIVE</code> before any account can be registered.</li>
+      <li>For admin-created users, the logged-in admin account must be active and belong to the organisation where the user is being created.</li>
+      <li>Admin-created users must not be allowed to provide or override another organisation ID in the request.</li>
+      <li>Public self-registration must resolve an active organisation from the request <code>orgId</code> or configured default organisation.</li>
+      <li>Role must be one of the supported role values for the organisation package type.</li>
+      <li>Password must be supplied and must pass password strength rules.</li>
+      <li>Required profile fields must be supplied for the selected role.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2 id="functional-requirements">5. Functional Requirements</h2>
+    <table>
+      <thead>
+      <tr><th>ID</th><th>Requirement</th><th>Priority</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>FR-001</td><td>Only <code>ADMIN</code>, <code>PATIENT</code>, and <code>CUSTOMER</code> actors can initiate account creation.</td><td>Must</td></tr>
+      <tr><td>FR-002</td><td>Organisation must be active before registration is allowed.</td><td>Must</td></tr>
+      <tr><td>FR-003</td><td>Admin account must be active before the admin can create staff, patient, pharmacist, doctor, or another admin.</td><td>Must</td></tr>
+      <tr><td>FR-004</td><td>HMS organisation admin can create <code>ADMIN</code>, <code>DOCTOR</code>, <code>NURSE</code>, <code>PHARMACIST</code>, <code>LAB_STAFF</code>, <code>BILLING_STAFF</code>, <code>OTHER_STAFF</code>, and <code>PATIENT</code>.</td><td>Must</td></tr>
+      <tr><td>FR-005</td><td>Pharmacy-only organisation admin can create <code>ADMIN</code>, <code>PHARMACIST</code>, and <code>CUSTOMER</code>.</td><td>Must</td></tr>
+      <tr><td>FR-006</td><td>Admin-created users must inherit <code>orgId</code> from the logged-in admin, not from the request body.</td><td>Must</td></tr>
+      <tr><td>FR-007</td><td>Admin can access, create, and view users only inside the admin's organisation.</td><td>Must</td></tr>
+      <tr><td>FR-008</td><td>Staff registration must require unique <code>username</code>, phone number, email address, and organisation-level global <code>employeeId</code>.</td><td>Must</td></tr>
+      <tr><td>FR-009</td><td>HMS patient registration must require unique <code>username</code>, phone number, and email address.</td><td>Must</td></tr>
+      <tr><td>FR-010</td><td>Pharmacy customer registration must require unique <code>username</code>, phone number, and email address.</td><td>Must</td></tr>
+      <tr><td>FR-011</td><td>For cross-login safety, username, phone, and email should be unique across both <code>users</code> and <code>pharmacyusers</code> where the identifier can be used for login.</td><td>Should</td></tr>
+      <tr><td>FR-012</td><td>Admin-created staff and admin accounts must be created in a pending first-password-change state and must not get normal application access until the first password update is completed.</td><td>Must</td></tr>
+      <tr><td>FR-013</td><td>Self-registered <code>PATIENT</code> and <code>CUSTOMER</code> accounts should remain inactive until account confirmation, such as email OTP verification.</td><td>Must</td></tr>
+      <tr><td>FR-014</td><td>Admin-created <code>PATIENT</code> and pharmacy <code>CUSTOMER</code> accounts must be active after creation but must be forced to change password on first login.</td><td>Must</td></tr>
+      <tr><td>FR-015</td><td>Pharmacy-only <code>CUSTOMER</code> accounts must be visible in <code>pharmacyusers</code>; remaining pharmacy staff must be visible in <code>users</code> and their role-specific table.</td><td>Must</td></tr>
+      <tr><td>FR-016</td><td>Password must be encoded before saving and must never be returned in API responses.</td><td>Must</td></tr>
+      <tr><td>FR-017</td><td>Registration response must return safe user details: message, user ID, username, first name, last name, role, and organisation ID.</td><td>Must</td></tr>
+      <tr><td>FR-018</td><td>Role-specific profile data must be saved transactionally with the base user account.</td><td>Must</td></tr>
+      <tr><td>FR-019</td><td>Duplicate or invalid data must return a clear validation error and must not create partial records.</td><td>Must</td></tr>
+      <tr><td>FR-020</td><td>Registration audit fields should identify whether the account was created by <code>SELF</code> or <code>ADMIN</code> and who created it.</td><td>Should</td></tr>
+      <tr><td>FR-021</td><td>Organisation package type must be stored in the <code>organisation</code> table and used for package-specific role validation.</td><td>Must</td></tr>
+      <tr><td>FR-022</td><td>Employee ID uniqueness must be enforced globally across all staff tables inside the same organisation.</td><td>Must</td></tr>
+      <tr><td>FR-023</td><td>Account creation must notify the registered email address to change password or complete first-login password setup.</td><td>Must</td></tr>
+      <tr><td>FR-024</td><td>A first-login password-change endpoint must update the password and clear the first-password-change requirement.</td><td>Must</td></tr>
+      <tr><td>FR-025</td><td>Enterprise/HMS users must be visible in the <code>users</code> table and role-specific profile table.</td><td>Must</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2 id="api-contract">6. API Contract</h2>
+    <h3>6.1 Patient Self-Registration</h3>
+    <table>
+      <thead>
+      <tr><th>Method</th><th>Endpoint</th><th>Auth</th><th>Purpose</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>POST</td><td><code>/v1/api/reg/patient/register</code></td><td>Public</td><td>Create a public HMS patient account.</td></tr>
+      </tbody>
+    </table>
+
+    <p>Request body:</p>
+    <pre>{
+  "username": "patient_john",
+  "email": "john@example.com",
+  "phone": "9876543210",
+  "password": "Patient@123",
+  "role": "PATIENT",
+  "firstName": "John",
+  "lastName": "Doe",
+  "address": "Chennai, TN",
+  "orgId": "HMS001",
+  "dateOfBirth": "1990-01-01",
+  "aadharNumber": "123412341234",
+  "emergencyContactName": "Sita Devi",
+  "emergencyContactNumber": "9123456789",
+  "bloodGroup": "O+",
+  "gender": "MALE"
+}</pre>
+
+    <p>Success response:</p>
+    <pre>{
+  "message": "Registration successful",
+  "userId": 101,
+  "username": "patient_john",
+  "firstName": "John",
+  "lastName": "Doe",
+  "role": "PATIENT",
+  "orgId": "HMS001"
+}</pre>
+
+    <p>Rules:</p>
+    <ul>
+      <li>Role must be forced to <code>PATIENT</code>, even if another public role is sent.</li>
+      <li>Only active organisations can be used for patient self-registration.</li>
+      <li>Account should remain inactive until account confirmation is complete.</li>
+      <li>Record must be saved in <code>users</code> and <code>patients</code>.</li>
+    </ul>
+
+    <h3>6.2 Pharmacy Customer Self-Registration</h3>
+    <table>
+      <thead>
+      <tr><th>Method</th><th>Endpoint</th><th>Auth</th><th>Purpose</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>POST</td><td><code>/v1/api/reg/pharmacy-users/register</code></td><td>Public</td><td>Create a public pharmacy customer account.</td></tr>
+      </tbody>
+    </table>
+
+    <p>Request body:</p>
+    <pre>{
+  "username": "customer_raj",
+  "firstName": "Raj",
+  "lastName": "Kumar",
+  "password": "Customer@123",
+  "phoneNumber": "9876543210",
+  "emailAddress": "raj@example.com",
+  "address": "Chennai, Tamil Nadu",
+  "orgId": "PHARM001"
+}</pre>
+
+    <p>Success response:</p>
+    <pre>{
+  "message": "Registration successful",
+  "userId": 201,
+  "username": "customer_raj",
+  "firstName": "Raj",
+  "lastName": "Kumar",
+  "role": "CUSTOMER",
+  "orgId": "PHARM001"
+}</pre>
+
+    <p>Rules:</p>
+    <ul>
+      <li>Role must be forced to <code>CUSTOMER</code>.</li>
+      <li>Only active organisations can be used for customer self-registration.</li>
+      <li>Account must remain inactive until account confirmation is complete.</li>
+      <li>Record must be saved in <code>pharmacyusers</code> only; a <code>users</code> row is not required for standalone customers.</li>
+    </ul>
+
+    <h3>6.3 Admin Creates Admin</h3>
+    <table>
+      <thead>
+      <tr><th>Method</th><th>Endpoint</th><th>Auth</th><th>Purpose</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>POST</td><td><code>/v1/api/reg/admin/create-admin</code></td><td>ADMIN</td><td>Create another admin inside the logged-in admin's organisation.</td></tr>
+      </tbody>
+    </table>
+
+    <p>Request body:</p>
+    <pre>{
+  "username": "admin_meera",
+  "email": "meera.admin@example.com",
+  "phone": "9876500011",
+  "password": "Admin@123",
+  "role": "ADMIN",
+  "firstName": "Meera",
+  "lastName": "Iyer",
+  "address": "Chennai, TN",
+  "department": "Administration",
+  "employeeId": "ADM1001"
+}</pre>
+
+    <p>Success response:</p>
+    <pre>{
+  "message": "User created successfully",
+  "userId": 301,
+  "username": "admin_meera",
+  "firstName": "Meera",
+  "lastName": "Iyer",
+  "role": "ADMIN",
+  "orgId": "HMS001"
+}</pre>
+
+    <p>Rules:</p>
+    <ul>
+      <li>Backend must force role to <code>ADMIN</code>.</li>
+      <li><code>orgId</code> must be inherited from the logged-in admin.</li>
+      <li><code>createdByType</code> should be saved as <code>ADMIN</code> and <code>createdByUserId</code> should be the logged-in admin's user ID.</li>
+    </ul>
+
+    <h3>6.4 Admin Creates Doctor</h3>
+    <table>
+      <thead>
+      <tr><th>Method</th><th>Endpoint</th><th>Auth</th><th>Purpose</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>POST</td><td><code>/v1/api/reg/admin/create-doctor</code></td><td>ADMIN</td><td>Create a doctor inside the logged-in admin's organisation.</td></tr>
+      </tbody>
+    </table>
+
+    <p>Request body:</p>
+    <pre>{
+  "username": "dr_ramesh",
+  "email": "ramesh.doctor@example.com",
+  "phone": "9876500022",
+  "password": "Doctor@123",
+  "firstName": "Ramesh",
+  "lastName": "Kumar",
+  "address": "Chennai, TN",
+  "age": 45,
+  "dateOfBirth": "1981-05-12",
+  "aadharNumber": "123412341234",
+  "emergencyContactName": "Sita Devi",
+  "emergencyContactNumber": "9123456789",
+  "bloodGroup": "A+",
+  "gender": "MALE",
+  "specialization": "Cardiology",
+  "licenseNumber": "MED123456",
+  "department": "Cardiology",
+  "employeeId": "DOC1001"
+}</pre>
+
+    <p>Success response:</p>
+    <pre>{
+  "message": "User created successfully",
+  "userId": 302,
+  "username": "dr_ramesh",
+  "firstName": "Ramesh",
+  "lastName": "Kumar",
+  "role": "DOCTOR",
+  "orgId": "HMS001"
+}</pre>
+
+    <p>Required doctor-specific fields:</p>
+    <ul>
+      <li><code>specialization</code></li>
+      <li><code>licenseNumber</code></li>
+      <li><code>employeeId</code> should be unique when supplied.</li>
+    </ul>
+
+    <h3>6.5 Admin Creates Staff</h3>
+    <table>
+      <thead>
+      <tr><th>Method</th><th>Endpoint</th><th>Auth</th><th>Purpose</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>POST</td><td><code>/v1/api/reg/admin/create-staff/{role}</code></td><td>ADMIN</td><td>Create staff user for <code>NURSE</code>, <code>PHARMACIST</code>, <code>LAB_STAFF</code>, <code>BILLING_STAFF</code>, or <code>OTHER_STAFF</code>.</td></tr>
+      </tbody>
+    </table>
+
+    <p>Request body:</p>
+    <pre>{
+  "username": "nurse_shyam",
+  "email": "shyam@example.com",
+  "phone": "9876543210",
+  "password": "Staff@123",
+  "firstName": "Shyam",
+  "lastName": "Kumar",
+  "department": "Cardiology",
+  "employeeId": "EMP23456",
+  "address": "Chennai, TN"
+}</pre>
+
+    <p>Success response:</p>
+    <pre>{
+  "message": "User created successfully",
+  "userId": 303,
+  "username": "nurse_shyam",
+  "firstName": "Shyam",
+  "lastName": "Kumar",
+  "role": "NURSE",
+  "orgId": "HMS001"
+}</pre>
+
+    <h3>6.6 Admin Creates Patient</h3>
+    <table>
+      <thead>
+      <tr><th>Method</th><th>Endpoint</th><th>Auth</th><th>Purpose</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>POST</td><td><code>/v1/api/reg/admin/create-patient</code></td><td>ADMIN</td><td>Create a patient inside the logged-in admin's organisation.</td></tr>
+      </tbody>
+    </table>
+
+    <p>Request body:</p>
+    <pre>{
+  "username": "patient_latha",
+  "email": "latha.patient@example.com",
+  "phone": "9876500033",
+  "password": "Patient@123",
+  "firstName": "Latha",
+  "lastName": "Ravi",
+  "address": "Chennai, TN",
+  "age": 34,
+  "dateOfBirth": "1992-02-18",
+  "aadharNumber": "432143214321",
+  "emergencyContactName": "Ravi Kumar",
+  "emergencyContactNumber": "9988776655",
+  "bloodGroup": "B+",
+  "gender": "FEMALE"
+}</pre>
+
+    <p>Success response:</p>
+    <pre>{
+  "message": "User created successfully",
+  "userId": 304,
+  "username": "patient_latha",
+  "firstName": "Latha",
+  "lastName": "Ravi",
+  "role": "PATIENT",
+  "orgId": "HMS001"
+}</pre>
+
+    <p>Rules:</p>
+    <ul>
+      <li>Admin-created HMS patients must be active after creation.</li>
+      <li>Admin-created HMS patients must be forced to change the temporary password on first login.</li>
+      <li>Notification must be sent to the registered email address after account creation.</li>
+    </ul>
+
+    <h3>6.7 Admin Creates Pharmacy Customer</h3>
+    <table>
+      <thead>
+      <tr><th>Method</th><th>Endpoint</th><th>Auth</th><th>Purpose</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>POST</td><td><code>/v1/api/reg/admin/create-customer</code></td><td>ADMIN</td><td>Create a pharmacy customer inside the logged-in admin's pharmacy-only organisation.</td></tr>
+      </tbody>
+    </table>
+
+    <p>Request body:</p>
+    <pre>{
+  "username": "customer_anita",
+  "firstName": "Anita",
+  "lastName": "Rao",
+  "password": "Customer@123",
+  "phoneNumber": "9876500044",
+  "emailAddress": "anita.customer@example.com",
+  "address": "Chennai, Tamil Nadu"
+}</pre>
+
+    <p>Success response:</p>
+    <pre>{
+  "message": "Customer created successfully",
+  "userId": 401,
+  "username": "customer_anita",
+  "firstName": "Anita",
+  "lastName": "Rao",
+  "role": "CUSTOMER",
+  "orgId": "PHARM001"
+}</pre>
+
+    <p>Rules:</p>
+    <ul>
+      <li>Endpoint is available only for pharmacy-only organisations.</li>
+      <li>Backend must force role to <code>CUSTOMER</code>.</li>
+      <li><code>orgId</code> must be inherited from the logged-in admin.</li>
+      <li>Customer record must be stored in <code>pharmacyusers</code>.</li>
+      <li>Admin-created pharmacy customers must be active after creation and forced to change password on first login.</li>
+      <li>Notification must be sent to the registered email address after account creation.</li>
+    </ul>
+
+    <h3>6.8 First Login Password Change</h3>
+    <table>
+      <thead>
+      <tr><th>Method</th><th>Endpoint</th><th>Auth</th><th>Purpose</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>POST</td><td><code>/v1/api/reg/first-login/change-password</code></td><td>First-login session/token</td><td>Update the temporary password after account creation and clear the first-password-change requirement.</td></tr>
+      </tbody>
+    </table>
+
+    <p>Request body:</p>
+    <pre>{
+  "userId": 303,
+  "role": "NURSE",
+  "oldPassword": "Staff@123",
+  "newPassword": "NewStaff@123",
+  "confirmPassword": "NewStaff@123"
+}</pre>
+
+    <p>Success response:</p>
+    <pre>{
+  "message": "Password changed successfully. Account is ready to use.",
+  "userId": 303,
+  "username": "nurse_shyam",
+  "role": "NURSE",
+  "orgId": "HMS001",
+  "isActive": true,
+  "mustChangePassword": false
+}</pre>
+
+    <p>Rules:</p>
+    <ul>
+      <li>This endpoint is required because the current implementation does not yet provide first-login password setup.</li>
+      <li>Applicable to admin-created admin, staff, HMS patient, and pharmacy customer accounts.</li>
+      <li><code>newPassword</code> and <code>confirmPassword</code> must match and satisfy password strength rules.</li>
+      <li>Successful password change must encode the new password and clear <code>mustChangePassword</code> or the equivalent first-login flag.</li>
+      <li>For pending staff/admin accounts, successful password change must activate the account for normal application access.</li>
+      <li>For active admin-created patient/customer accounts, successful password change must keep the account active and allow normal application access.</li>
+    </ul>
+
+    <h3>Common Response Notes</h3>
+    <ul>
+      <li>All registration APIs return HTTP <code>201 Created</code> on successful account creation.</li>
+      <li>First-login password change returns HTTP <code>200 OK</code> after the password is updated successfully.</li>
+      <li><code>userId</code> is sourced from <code>users.user_id</code> for HMS/admin/staff/patient users.</li>
+      <li><code>userId</code> is sourced from <code>pharmacyusers.pharmacy_user_id</code> for standalone pharmacy customers.</li>
+      <li>Response must never include plain password, encoded password, OTP, reset token, lockout counters, or internal audit fields.</li>
+    </ul>
+
+    <div class="note">
+      Admin-created APIs must ignore client-provided <code>orgId</code> and must use the logged-in admin's organisation. This prevents cross-organisation account creation.
+    </div>
+  </section>
+
+  <section>
+    <h2 id="organisation-and-package-rules">7. Organisation and Package Rules</h2>
+    <table>
+      <thead>
+      <tr><th>Organisation Type</th><th>Allowed Roles</th><th>Storage Rule</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>Enterprise HMS</td><td><code>ADMIN</code>, <code>DOCTOR</code>, <code>NURSE</code>, <code>PHARMACIST</code>, <code>LAB_STAFF</code>, <code>BILLING_STAFF</code>, <code>OTHER_STAFF</code>, <code>PATIENT</code></td><td>All users go to <code>users</code>; role details go to role-specific tables.</td></tr>
+      <tr><td>Pharmacy Only</td><td><code>ADMIN</code>, <code>PHARMACIST</code>, <code>CUSTOMER</code></td><td><code>CUSTOMER</code> goes to <code>pharmacyusers</code>; admin and pharmacist go to <code>users</code> and role-specific tables.</td></tr>
+      </tbody>
+    </table>
+
+    <ul>
+      <li>Admin must not create users for another organisation.</li>
+      <li>Public registration must not allow registration into inactive organisations.</li>
+      <li>Package-specific role rules should be enforced by backend validation, not only by frontend dropdowns.</li>
+      <li>Organisation package type must be stored in the <code>organisation</code> table, for example <code>ENTERPRISE_HMS</code> or <code>PHARMACY_ONLY</code>.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2 id="database-requirements">8. Database Requirements</h2>
+    <h3>Users Table</h3>
+    <table>
+      <thead>
+      <tr><th>Field</th><th>Rule</th></tr>
+      </thead>
+      <tbody>
+      <tr><td><code>user_id</code></td><td>Primary key returned as <code>userId</code>.</td></tr>
+      <tr><td><code>username</code></td><td>Required and unique.</td></tr>
+      <tr><td><code>first_name</code></td><td>Required.</td></tr>
+      <tr><td><code>last_name</code></td><td>Optional for users; required for pharmacy customers.</td></tr>
+      <tr><td><code>email</code></td><td>Required and unique; lookup should be case-insensitive.</td></tr>
+      <tr><td><code>phone</code></td><td>Required and unique.</td></tr>
+      <tr><td><code>password</code></td><td>Required encoded password.</td></tr>
+      <tr><td><code>role</code></td><td>Must match supported role values.</td></tr>
+      <tr><td><code>org_id</code></td><td>Required active organisation ID.</td></tr>
+      <tr><td><code>is_active</code></td><td>Controls login availability after registration.</td></tr>
+      <tr><td><code>must_change_password</code></td><td>Required for admin-created accounts that must update password on first login.</td></tr>
+      <tr><td><code>created_by_type</code></td><td><code>SELF</code> or <code>ADMIN</code>.</td></tr>
+      <tr><td><code>created_by_user_id</code></td><td>Logged-in admin user ID for admin-created users.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Pharmacy Users Table</h3>
+    <table>
+      <thead>
+      <tr><th>Field</th><th>Rule</th></tr>
+      </thead>
+      <tbody>
+      <tr><td><code>pharmacy_user_id</code></td><td>Primary key returned as <code>userId</code> for customer registration.</td></tr>
+      <tr><td><code>user_id</code></td><td>Nullable; standalone customers do not require a normal <code>users</code> row.</td></tr>
+      <tr><td><code>username</code></td><td>Required and unique.</td></tr>
+      <tr><td><code>phone_number</code></td><td>Required and unique.</td></tr>
+      <tr><td><code>email_address</code></td><td>Required and unique; lookup should be case-insensitive.</td></tr>
+      <tr><td><code>password</code></td><td>Required encoded password.</td></tr>
+      <tr><td><code>role</code></td><td>Must be <code>CUSTOMER</code>.</td></tr>
+      <tr><td><code>org_id</code></td><td>Required active organisation ID.</td></tr>
+      <tr><td><code>is_active</code></td><td>Defaults to false for self-registration until account confirmation; admin-created customers are active but must change password on first login.</td></tr>
+      <tr><td><code>must_change_password</code></td><td>Required for admin-created pharmacy customers that must update password on first login.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Role Profile Tables</h3>
+    <table>
+      <thead>
+      <tr><th>Table</th><th>Registration Rule</th></tr>
+      </thead>
+      <tbody>
+      <tr><td><code>admins</code></td><td>Created for <code>ADMIN</code> users; <code>employee_id</code> should be unique when used.</td></tr>
+      <tr><td><code>patients</code></td><td>Created for <code>PATIENT</code> users and linked to <code>users.user_id</code>.</td></tr>
+      <tr><td><code>doctors</code></td><td>Created for <code>DOCTOR</code> users; <code>license_number</code> and <code>employee_id</code> should be unique.</td></tr>
+      <tr><td><code>nurses</code>, <code>pharmacists</code>, <code>lab_staff</code>, <code>billing_staff</code>, <code>other_staff</code></td><td>Created for staff users; <code>employee_id</code> must be globally unique across all staff tables inside the same organisation.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Organisation Table</h3>
+    <table>
+      <thead>
+      <tr><th>Field</th><th>Rule</th></tr>
+      </thead>
+      <tbody>
+      <tr><td><code>id</code></td><td>Used as registration <code>orgId</code>.</td></tr>
+      <tr><td><code>organisation_type</code> or <code>package_type</code></td><td>Stores package type such as <code>ENTERPRISE_HMS</code> or <code>PHARMACY_ONLY</code> and drives allowed-role validation.</td></tr>
+      <tr><td><code>org_status</code></td><td>Must be <code>ACTIVE</code> for registration.</td></tr>
+      <tr><td><code>organisation_name</code></td><td>Used to resolve default self-registration organisation when no <code>orgId</code> is supplied.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2 id="validation-rules">9. Validation Rules</h2>
+    <ul>
+      <li><code>username</code> is required and must be 3 to 50 characters.</li>
+      <li><code>firstName</code> is required.</li>
+      <li><code>lastName</code> is required for pharmacy customer registration.</li>
+      <li><code>email</code> or <code>emailAddress</code> is required and must be valid email format.</li>
+      <li><code>phone</code> or <code>phoneNumber</code> is required and must be 10 digits.</li>
+      <li>Password must contain minimum 8 characters, one uppercase letter, one lowercase letter, one number, and one special character.</li>
+      <li><code>orgId</code> must refer to an active organisation when supplied.</li>
+      <li>Public patient registration must reject any non-<code>PATIENT</code> role.</li>
+      <li>Public customer registration must create only a <code>CUSTOMER</code> role.</li>
+      <li>Admin staff path role must be one of <code>NURSE</code>, <code>PHARMACIST</code>, <code>LAB_STAFF</code>, <code>BILLING_STAFF</code>, or <code>OTHER_STAFF</code>.</li>
+      <li>Admin customer creation is allowed only when the logged-in admin's organisation package type is <code>PHARMACY_ONLY</code>.</li>
+      <li><code>gender</code>, when supplied, must be <code>MALE</code>, <code>FEMALE</code>, or <code>OTHER</code>.</li>
+      <li><code>bloodGroup</code>, when supplied, should be one of A+, A-, B+, B-, AB+, AB-, O+, or O-.</li>
+      <li><code>aadharNumber</code>, when supplied, must be 12 digits.</li>
+      <li><code>emergencyContactNumber</code>, when supplied, must be 10 digits.</li>
+      <li><code>dateOfBirth</code>, when supplied, must be in the past.</li>
+      <li><code>specialization</code> and <code>licenseNumber</code> are required for doctor creation.</li>
+      <li><code>employeeId</code> must be unique across all staff and doctor accounts inside the same organisation when supplied.</li>
+      <li>First-login password change must require old password, new password, confirm password, matching passwords, and password strength validation.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2 id="error-handling">10. Error Handling</h2>
+    <table>
+      <thead>
+      <tr><th>Status</th><th>Scenario</th><th>Expected Rule</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>400</td><td>Missing or invalid required field</td><td>Return validation message for the field.</td></tr>
+      <tr><td>400</td><td>Weak password</td><td>Return password strength requirement.</td></tr>
+      <tr><td>400</td><td>Duplicate username, email, phone, or employee ID</td><td>Reject registration and do not create partial records.</td></tr>
+      <tr><td>400</td><td>Invalid role for selected endpoint or organisation package</td><td>Reject registration.</td></tr>
+      <tr><td>400</td><td>First-login password change has mismatched or weak password</td><td>Reject password update.</td></tr>
+      <tr><td>401</td><td>Admin endpoint called without authentication</td><td>Reject request.</td></tr>
+      <tr><td>403</td><td>Logged-in user is not an active admin</td><td>Reject request.</td></tr>
+      <tr><td>403</td><td>Admin tries to create user outside own organisation</td><td>Reject request.</td></tr>
+      <tr><td>404</td><td>Organisation not found</td><td>Reject registration.</td></tr>
+      <tr><td>409</td><td>Uniqueness conflict</td><td>Return conflict response with safe message.</td></tr>
+      </tbody>
+    </table>
+    <div class="warning">Implementation note: current service throws runtime exceptions for several registration failures. For consistent API behavior, map these exceptions to stable error responses through the global exception handler.</div>
+  </section>
+
+  <section>
+    <h2 id="security-rules">11. Security Rules</h2>
+    <ul>
+      <li>Password must never be logged or returned in API responses.</li>
+      <li>Password must be encoded before persistence.</li>
+      <li>Admin-created registration must use the authenticated admin identity from the security context.</li>
+      <li>Client-provided <code>orgId</code> must not be trusted for admin-created accounts.</li>
+      <li>Role values must be backend-enforced to prevent privilege escalation.</li>
+      <li>Registration must be transactional so base user and role profile are created together or rolled back together.</li>
+      <li>First-login password change must not allow normal application access until the temporary password is replaced where <code>mustChangePassword</code> is true.</li>
+      <li>Public registration endpoints should be rate limited to reduce automated fake account creation.</li>
+      <li>Duplicate-check responses should be useful but should not expose unnecessary private user details.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2 id="development-notes">12. Development Notes</h2>
+    <ul>
+      <li>Controller: <code>src/main/java/com/hms/Register/controller/RegisterController.java</code></li>
+      <li>Service: <code>src/main/java/com/hms/Register/service/RegisterService.java</code></li>
+      <li>Base request DTO: <code>src/main/java/com/hms/Register/dto/RegisterRequest.java</code></li>
+      <li>Patient request DTO: <code>src/main/java/com/hms/Register/dto/PatientCreateRequest.java</code></li>
+      <li>Doctor request DTO: <code>src/main/java/com/hms/Register/dto/DoctorCreateRequest.java</code></li>
+      <li>Staff request DTO: <code>src/main/java/com/hms/Register/dto/StaffCreateRequest.java</code></li>
+      <li>Pharmacy customer DTO: <code>src/main/java/com/hms/Register/dto/PharmacyUserRegisterRequest.java</code></li>
+      <li>User repository: <code>src/main/java/com/hms/Register/repository/UserRepository.java</code></li>
+      <li>Pharmacy customer repository: <code>src/main/java/com/hms/Register/repository/PharmacyUserRepository.java</code></li>
+      <li>Organisation repository: <code>src/main/java/com/hms/organisation/repository/OrganisationRepository.java</code></li>
+      <li>Database script: <code>Databasesfiles/Login&amp;Register/hms-register-db.sql</code></li>
+    </ul>
+
+    <h3>Suggested Development Improvements</h3>
+    <ul>
+      <li>Add or confirm an organisation package/type column in the <code>organisation</code> table for enterprise HMS vs pharmacy-only validation.</li>
+      <li>Enforce active admin status explicitly before admin-created registration.</li>
+      <li>Enforce active organisation validation for all admin-created users, not only self-registration.</li>
+      <li>Add <code>must_change_password</code> or an equivalent first-login password flag to user tables.</li>
+      <li>Add first-login password-change API and UI popup after temporary-password login.</li>
+      <li>Send account-created email notification with password-change instructions.</li>
+      <li>Enforce <code>employeeId</code> uniqueness across all staff profile tables inside the same organisation.</li>
+      <li>Standardize exception responses for duplicate, validation, inactive organisation, and invalid role scenarios.</li>
+      <li>Add endpoint or query rules for admin user list by organisation only.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2 id="test-checklist">13. Test Checklist</h2>
+    <h3>Unit Tests</h3>
+    <ul>
+      <li>Patient self-registration succeeds for active organisation.</li>
+      <li>Patient self-registration fails for inactive or unknown organisation.</li>
+      <li>Patient self-registration rejects non-<code>PATIENT</code> role.</li>
+      <li>Customer self-registration succeeds for active organisation and stores only in <code>pharmacyusers</code>.</li>
+      <li>Customer self-registration fails for duplicate username, email, or phone across <code>users</code> and <code>pharmacyusers</code>.</li>
+      <li>Admin creates admin in the admin's organisation.</li>
+      <li>Admin creates doctor with specialization and license number.</li>
+      <li>Admin creates staff for each allowed staff role.</li>
+      <li>Admin staff creation rejects invalid role path value.</li>
+      <li>Pharmacy-only admin can create a customer using the admin customer creation endpoint.</li>
+      <li>Enterprise HMS admin cannot create a pharmacy-only customer.</li>
+      <li>Admin-created users inherit admin <code>orgId</code>.</li>
+      <li>Admin-created users cannot be assigned to another organisation by request payload.</li>
+      <li>Inactive admin cannot create users.</li>
+      <li>Inactive organisation cannot receive new users.</li>
+      <li>Duplicate username, email, phone, and organisation-level staff employee ID are rejected.</li>
+      <li>Admin-created admin and staff accounts require first-login password change before normal application access.</li>
+      <li>Admin-created patient and customer accounts are active after creation but require first-login password change.</li>
+      <li>First-login password change updates encoded password and clears the first-password-change flag.</li>
+      <li>Weak password is rejected.</li>
+      <li>Role profile creation rolls back if base user or profile save fails.</li>
+    </ul>
+
+    <h3>API / Integration Tests</h3>
+    <ul>
+      <li><code>POST /v1/api/reg/patient/register</code> returns 201 for valid patient registration.</li>
+      <li><code>POST /v1/api/reg/pharmacy-users/register</code> returns 201 for valid customer registration.</li>
+      <li><code>POST /v1/api/reg/admin/create-admin</code> requires ADMIN authentication.</li>
+      <li><code>POST /v1/api/reg/admin/create-doctor</code> requires ADMIN authentication.</li>
+      <li><code>POST /v1/api/reg/admin/create-staff/{role}</code> requires ADMIN authentication and valid role.</li>
+      <li><code>POST /v1/api/reg/admin/create-patient</code> requires ADMIN authentication.</li>
+      <li><code>POST /v1/api/reg/admin/create-customer</code> requires ADMIN authentication and pharmacy-only organisation package type.</li>
+      <li><code>POST /v1/api/reg/first-login/change-password</code> changes temporary password and clears the first-login password flag.</li>
+      <li>Registration response never contains password or encoded password.</li>
+      <li>Created HMS users appear in <code>users</code> and correct role-specific table.</li>
+      <li>Created pharmacy customers appear in <code>pharmacyusers</code>.</li>
+      <li>Pharmacy-only staff appear in <code>users</code> and not in <code>pharmacyusers</code>.</li>
+    </ul>
+
+    <h3>Manual Swagger Testing</h3>
+    <ol>
+      <li>Confirm an active organisation exists in the <code>organisation</code> table.</li>
+      <li>Register a patient using <code>/v1/api/reg/patient/register</code>.</li>
+      <li>Register a pharmacy customer using <code>/v1/api/reg/pharmacy-users/register</code>.</li>
+      <li>Login as active admin and authorize Swagger with the admin token.</li>
+      <li>Create a doctor, nurse, pharmacist, lab staff, billing staff, other staff, patient, customer, and admin through admin endpoints.</li>
+      <li>Verify each created user has the admin's <code>orgId</code>.</li>
+      <li>Attempt duplicate username, email, phone, and employee ID and confirm validation errors.</li>
+      <li>Set organisation inactive and confirm registration is blocked.</li>
+      <li>Login with an admin-created account and confirm the UI shows the first-login new-password popup.</li>
+      <li>Complete first-login password change and confirm normal access is allowed.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2 id="acceptance-criteria">14. Acceptance Criteria</h2>
+    <ul>
+      <li>Given an active organisation, when a patient self-registers with valid unique details, then a <code>PATIENT</code> account is created under that organisation.</li>
+      <li>Given an inactive organisation, when any user attempts registration, then the registration is rejected.</li>
+      <li>Given an active admin, when the admin creates staff, then the staff account inherits the admin's organisation ID.</li>
+      <li>Given an admin from organisation A, when the admin attempts to create a user for organisation B, then the system prevents cross-organisation creation.</li>
+      <li>Given duplicate username, phone, email, or employee ID, when registration is submitted, then no account is created and a clear error is returned.</li>
+      <li>Given a pharmacy customer registration, when registration succeeds, then the account exists in <code>pharmacyusers</code> and not as a normal staff user in <code>users</code>.</li>
+      <li>Given a pharmacy-only admin, when the admin creates a customer, then the customer is created in <code>pharmacyusers</code>, inherits the admin's organisation ID, is active, and must change password on first login.</li>
+      <li>Given admin-created admin or staff registration, when the account is created, then the user is notified by email and must complete first-login password change before normal application access.</li>
+      <li>Given admin-created patient or customer registration, when the account is created, then the account is active but the first login requires password change before proceeding.</li>
+      <li>Given first-login password change succeeds, when the user logs in again, then the first-login password popup is no longer shown.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2 id="resolved-product-decisions">15. Resolved Product Decisions</h2>
+    <ul>
+      <li>Only admin, patient, and customer actors can initiate registration.</li>
+      <li>Admin-created accounts are organisation-scoped to the logged-in admin.</li>
+      <li>HMS organisations support full HMS roles; pharmacy-only organisations support admin, pharmacist, and customer roles.</li>
+      <li>Organisation package type is stored in the <code>organisation</code> table and controls allowed registration roles.</li>
+      <li>Enterprise HMS accounts are stored in <code>users</code> plus role profile tables.</li>
+      <li>Pharmacy customers are stored in <code>pharmacyusers</code>; pharmacy staff remain in <code>users</code>.</li>
+      <li>Public registration must not create active login-ready accounts until the account confirmation step is complete.</li>
+      <li>Admin-created admin and staff accounts require email notification and first-login password change before normal access.</li>
+      <li>Admin-created patient and customer accounts are active after creation but must change password on first login.</li>
+      <li>Employee ID uniqueness is global across all staff tables inside the same organisation.</li>
+      <li>A new first-login password-change endpoint is required because it does not currently exist.</li>
+      <li>A new admin-created pharmacy customer endpoint is required for pharmacy-only organisations.</li>
+    </ul>
+  </section>
+</main>
+</body>
+</html>

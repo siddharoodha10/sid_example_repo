@@ -1,0 +1,998 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Login API RD</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #1d2733;
+      --muted: #5a6675;
+      --line: #d8dee7;
+      --panel: #f6f8fb;
+      --accent: #0f766e;
+      --accent-soft: #e6f4f1;
+      --danger-soft: #fff1f0;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--ink);
+      background: #ffffff;
+      line-height: 1.55;
+    }
+
+    main {
+      width: min(1100px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 32px 0 56px;
+    }
+
+    header {
+      border-bottom: 3px solid var(--accent);
+      margin-bottom: 28px;
+      padding-bottom: 18px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 34px;
+      line-height: 1.15;
+    }
+
+    h2 {
+      margin: 30px 0 12px;
+      font-size: 22px;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 8px;
+    }
+
+    h3 {
+      margin: 20px 0 10px;
+      font-size: 17px;
+    }
+
+    p {
+      margin: 0 0 12px;
+    }
+
+    .meta {
+      color: var(--muted);
+      margin: 0;
+    }
+
+    .note {
+      background: var(--accent-soft);
+      border-left: 4px solid var(--accent);
+      padding: 12px 14px;
+      margin: 14px 0;
+    }
+
+    .warning {
+      background: var(--danger-soft);
+      border-left: 4px solid #dc2626;
+      padding: 12px 14px;
+      margin: 14px 0;
+    }
+
+    .toc {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 14px 16px;
+      margin: 0 0 22px;
+    }
+
+    .toc h2 {
+      border-bottom: 0;
+      margin: 0 0 8px;
+      padding-bottom: 0;
+    }
+
+    .toc ol {
+      columns: 2;
+      margin: 0;
+    }
+
+    .toc li {
+      break-inside: avoid;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0 18px;
+      font-size: 14px;
+    }
+
+    th,
+    td {
+      border: 1px solid var(--line);
+      padding: 9px 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: var(--panel);
+      font-weight: 700;
+    }
+
+    code,
+    pre {
+      font-family: Consolas, "Courier New", monospace;
+    }
+
+    code {
+      background: var(--panel);
+      padding: 2px 5px;
+      border-radius: 4px;
+    }
+
+    pre {
+      background: #111827;
+      color: #f9fafb;
+      overflow-x: auto;
+      padding: 14px;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    ul,
+    ol {
+      padding-left: 22px;
+    }
+
+    li {
+      margin: 4px 0;
+    }
+
+    a {
+      color: var(--accent);
+    }
+
+    @media (max-width: 720px) {
+      .toc ol {
+        columns: 1;
+      }
+    }
+
+    @media print {
+      main {
+        width: 100%;
+        padding: 0;
+      }
+
+      pre {
+        white-space: pre-wrap;
+      }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Login API Requirements Document</h1>
+    <p class="meta">HMS module RD for development, testing, and review. Updated: 2026-06-30.</p>
+  </header>
+
+  <nav class="toc" aria-labelledby="table-of-contents">
+    <h2 id="table-of-contents">Table of Contents</h2>
+    <ol>
+      <li><a href="#purpose">Purpose</a></li>
+      <li><a href="#scope">Scope</a></li>
+      <li><a href="#actors-and-roles">Actors and Roles</a></li>
+      <li><a href="#pre-conditions">Pre-Conditions</a></li>
+      <li><a href="#functional-requirements">Functional Requirements</a></li>
+      <li><a href="#api-contract">API Contract</a></li>
+      <li><a href="#organisation-requirements">Organisation Requirements</a></li>
+      <li><a href="#database-requirements">Database Requirements</a></li>
+      <li><a href="#validation-rules">Validation Rules</a></li>
+      <li><a href="#error-handling">Error Handling</a></li>
+      <li><a href="#security-rules">Security Rules</a></li>
+      <li><a href="#development-notes">Development Notes</a></li>
+      <li><a href="#test-checklist">Test Checklist</a></li>
+      <li><a href="#resolved-product-decisions">Resolved Product Decisions</a></li>
+      <li><a href="#seeded-development-accounts">Seeded Development Accounts</a></li>
+    </ol>
+  </nav>
+
+  <section>
+    <h2 id="purpose">1. Purpose</h2>
+    <p>The Login API authenticates an existing HMS user and returns tokens needed to access protected APIs. It must support login using username, phone number, or email address, and it must map the logged-in user to the correct organisation and role.</p>
+  </section>
+
+  <section>
+    <h2 id="scope">2. Scope</h2>
+    <h3>In Scope</h3>
+    <ul>
+      <li>Login with username, phone number, or email address.</li>
+      <li>Password authentication for an existing active user.</li>
+      <li>Organisation-aware login using the user's stored <code>orgId</code>.</li>
+      <li>Role-aware login for HMS roles.</li>
+      <li>Access token generation.</li>
+      <li>Refresh token generation, storage, rotation, and cookie handling.</li>
+      <li>Device-aware refresh token management.</li>
+      <li>Failed login lockout using organisation-specific maximum attempts.</li>
+      <li>Customer/patient self-service forgot-password flow using email OTP and new password confirmation.</li>
+      <li>Admin-managed login policy configuration.</li>
+      <li>Development and testing checklist for login behavior.</li>
+    </ul>
+
+    <h3>Out of Scope</h3>
+    <ul>
+      <li>Creating a new user during login.</li>
+      <li>OTP login.</li>
+      <li>Frontend page design, except required organisation logo/name behavior.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2 id="actors-and-roles">3. Actors and Roles</h2>
+    <table>
+      <thead>
+      <tr><th>Role</th><th>Notes</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>ADMIN</td><td>Organisation admin / privileged user.</td></tr>
+      <tr><td>DOCTOR</td><td>Medical staff user.</td></tr>
+      <tr><td>NURSE</td><td>Nursing staff user.</td></tr>
+      <tr><td>PHARMACIST</td><td>Pharmacy staff user.</td></tr>
+      <tr><td>LAB_STAFF</td><td>Lab staff user.</td></tr>
+      <tr><td>BILLING_STAFF</td><td>Billing staff user.</td></tr>
+      <tr><td>OTHER_STAFF</td><td>Other organisation staff.</td></tr>
+      <tr><td>PATIENT</td><td>Patient self-registration user.</td></tr>
+      <tr><td>CUSTOMER</td><td>Pharmacy customer user.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2 id="pre-conditions">4. Pre-Conditions</h2>
+    <ul>
+      <li>User must already exist before login.</li>
+      <li>HMS staff and patient users must belong to a valid organisation through <code>users.org_id</code>.</li>
+      <li>Pharmacy <code>CUSTOMER</code> users must belong to a valid organisation through <code>pharmacyusers.org_id</code>.</li>
+      <li>User must have a valid role.</li>
+      <li>User account must be active.</li>
+      <li>User account must not be locked.</li>
+      <li>Password must already be stored as an encoded password.</li>
+      <li>Frontend should resolve and display the organisation name/logo before login when the login page is organisation-specific.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2 id="functional-requirements">5. Functional Requirements</h2>
+    <table>
+      <thead>
+      <tr><th>ID</th><th>Requirement</th><th>Priority</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>FR-001</td><td>User can login with username, phone number, or email address using a single <code>loginId</code> field.</td><td>Must</td></tr>
+      <tr><td>FR-002</td><td>User must provide password.</td><td>Must</td></tr>
+      <tr><td>FR-003</td><td>User should be created/register first before login is allowed.</td><td>Must</td></tr>
+      <tr><td>FR-004</td><td>Only active users can login.</td><td>Must</td></tr>
+      <tr><td>FR-005</td><td>Login response must include access token, refresh token, user ID, username, first name, last name, role, orgId, organisationName, logoUrl, and <code>mustChangePassword</code>.</td><td>Must</td></tr>
+      <tr><td>FR-006</td><td>Login token claims must include username, role, and organisation ID.</td><td>Must</td></tr>
+      <tr><td>FR-007</td><td>Refresh token must be saved against user and device ID.</td><td>Must</td></tr>
+      <tr><td>FR-008</td><td>Re-login from the same device must replace the previous refresh token for that user/device.</td><td>Must</td></tr>
+      <tr><td>FR-009</td><td>Browser clients must receive refresh token as an HttpOnly cookie.</td><td>Must</td></tr>
+      <tr><td>FR-010</td><td>Refresh API must rotate refresh token and issue a new access token.</td><td>Must</td></tr>
+      <tr><td>FR-011</td><td>Refresh must use the same device ID used during login.</td><td>Must</td></tr>
+      <tr><td>FR-012</td><td>Login should not expose password, password hash, or internal DB data.</td><td>Must</td></tr>
+      <tr><td>FR-013</td><td>Login page should display the respective organisation name/logo before authentication when the organisation is selected/resolved.</td><td>Should</td></tr>
+      <tr><td>FR-014</td><td>Common login API must support all user roles, including pharmacy <code>CUSTOMER</code>; access is still isolated by <code>orgId</code> and downstream role permissions.</td><td>Must</td></tr>
+      <tr><td>FR-015</td><td>Self-registered <code>PATIENT</code> and <code>CUSTOMER</code> accounts become active after successful email OTP verification, not admin approval.</td><td>Must</td></tr>
+      <tr><td>FR-016</td><td>Failed login attempts must lock the account when the organisation's configured limit is reached. Default limit is 3.</td><td>Must</td></tr>
+      <tr><td>FR-017</td><td>Admin users must be able to update max failed login attempts per organisation.</td><td>Must</td></tr>
+      <tr><td>FR-018</td><td>A user can have at most 3 active device sessions. Same-device login replaces the existing session.</td><td>Must</td></tr>
+      <tr><td>FR-019</td><td>Pharmacy <code>CUSTOMER</code> self-registration must create the account only in <code>pharmacyusers</code>, not in the normal <code>users</code> table.</td><td>Must</td></tr>
+      <tr><td>FR-020</td><td>Login, refresh token, token blacklist, logout, lockout, and forgot-password flows must support standalone <code>pharmacyusers</code> customer accounts.</td><td>Must</td></tr>
+      <tr><td>FR-021</td><td>Locked <code>PATIENT</code> and <code>CUSTOMER</code> accounts can use forgot-password email OTP to verify ownership, set a new password, clear failed attempts, and unlock the account.</td><td>Must</td></tr>
+      <tr><td>FR-022</td><td>Locked admin/staff accounts must remain admin-managed and must not be self-unlocked through forgot-password.</td><td>Must</td></tr>
+      <tr><td>FR-023</td><td>Admin-created admin, staff, HMS patient, and pharmacy customer accounts must login with the temporary password and receive <code>mustChangePassword = true</code> until first-login password change is completed.</td><td>Must</td></tr>
+      <tr><td>FR-024</td><td>When <code>mustChangePassword = true</code>, frontend must show the new-password popup and prevent normal dashboard use until password update succeeds.</td><td>Must</td></tr>
+      <tr><td>FR-025</td><td>First-login password change must update the encoded password and clear <code>must_change_password</code>.</td><td>Must</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2 id="api-contract">6. API Contract</h2>
+    <h3>6.1 Login</h3>
+    <table>
+      <thead>
+      <tr><th>Method</th><th>Endpoint</th><th>Auth</th><th>Purpose</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>POST</td><td><code>/v1/api/login</code></td><td>Public</td><td>Authenticate user and create access/refresh token pair.</td></tr>
+      </tbody>
+    </table>
+
+    <p>Request body:</p>
+    <pre>{
+  "loginId": "superadmin",
+  "password": "Admin@123",
+  "deviceId": "web-chrome-01"
+}</pre>
+
+    <p><code>loginId</code> may be username, email address, or phone number.</p>
+
+    <p>Success response:</p>
+    <pre>{
+  "accessToken": "&lt;jwt-access-token&gt;",
+  "refreshToken": "&lt;refresh-token&gt;",
+  "userId": 1,
+  "username": "superadmin",
+  "firstName": "Super",
+  "lastName": "Admin",
+  "role": "ADMIN",
+  "orgId": "ORG-001",
+  "organisationName": "City Pharmacy",
+  "logoUrl": "https://cdn.example.com/logo.png",
+  "mustChangePassword": false
+}</pre>
+
+    <p>Admin-created account first-login response:</p>
+    <pre>{
+  "accessToken": "&lt;jwt-access-token&gt;",
+  "refreshToken": "&lt;refresh-token&gt;",
+  "userId": 303,
+  "username": "nurse_shyam",
+  "firstName": "Shyam",
+  "lastName": "Kumar",
+  "role": "NURSE",
+  "orgId": "HMS001",
+  "organisationName": "HMS",
+  "logoUrl": "https://cdn.example.com/logo.png",
+  "mustChangePassword": true
+}</pre>
+
+    <div class="note">
+      If <code>mustChangePassword</code> is true, login is successful but the user must complete first-login password change before normal dashboard access.
+    </div>
+
+    <h3>Cookie Behavior</h3>
+    <ul>
+      <li>Set <code>refresh_token</code> as HttpOnly cookie.</li>
+      <li>Cookie path: <code>/</code>.</li>
+      <li>SameSite: <code>Lax</code>.</li>
+      <li>Max age: 7 days.</li>
+      <li>Secure cookie should be enabled only for secure non-localhost requests.</li>
+    </ul>
+
+    <h3>6.2 Refresh Token</h3>
+    <table>
+      <thead>
+      <tr><th>Method</th><th>Endpoint</th><th>Auth</th><th>Purpose</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>POST</td><td><code>/v1/api/refresh</code></td><td>Refresh token</td><td>Rotate refresh token and issue new access token.</td></tr>
+      </tbody>
+    </table>
+
+    <p>Request body:</p>
+    <pre>{
+  "accessToken": "&lt;old-access-token&gt;",
+  "refreshToken": "&lt;refresh-token&gt;",
+  "deviceId": "web-chrome-01"
+}</pre>
+
+    <p>Success response:</p>
+    <pre>{
+  "accessToken": "&lt;new-jwt-access-token&gt;",
+  "refreshToken": "&lt;new-refresh-token&gt;",
+  "userId": 1,
+  "username": "superadmin",
+  "firstName": "Super",
+  "lastName": "Admin",
+  "role": "ADMIN",
+  "orgId": "ORG-001",
+  "organisationName": "City Pharmacy",
+  "logoUrl": "https://cdn.example.com/logo.png",
+  "mustChangePassword": false
+}</pre>
+
+    <ul>
+      <li>Browser clients may omit <code>refreshToken</code> in JSON if <code>refresh_token</code> cookie is present.</li>
+      <li>Swagger/API testers can pass <code>refreshToken</code> in the request body.</li>
+      <li><code>deviceId</code> must match the device ID stored with the refresh token.</li>
+      <li>Old refresh token must be deleted after rotation.</li>
+      <li>Old access token should be blacklisted when provided.</li>
+      <li>Refresh response returns the same user and organisation convenience fields as login response.</li>
+    </ul>
+
+    <h3>6.3 Admin Login Policy</h3>
+    <table>
+      <thead>
+      <tr><th>Method</th><th>Endpoint</th><th>Auth</th><th>Purpose</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>PATCH</td><td><code>/v1/api/admin/login-policy/organisations/{orgId}</code></td><td>ADMIN</td><td>Update maximum failed login attempts for an organisation.</td></tr>
+      <tr><td>PATCH</td><td><code>/v1/api/admin/login-policy/users/{userId}/unlock</code></td><td>ADMIN</td><td>Unlock a user account after failed-login lockout.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Update Login Policy Request</h3>
+    <pre>{
+  "maxLoginAttempts": 3
+}</pre>
+
+    <p>Success response:</p>
+    <pre>{
+  "message": "Login policy updated successfully",
+  "orgId": "ORG-001",
+  "maxLoginAttempts": 3
+}</pre>
+
+    <h3>Unlock User Request</h3>
+    <pre>{}</pre>
+
+    <p>Success response:</p>
+    <pre>{
+  "message": "User account unlocked successfully",
+  "userId": 25,
+  "username": "patient_john",
+  "role": "PATIENT",
+  "orgId": "ORG-001",
+  "accountLocked": false,
+  "failedLoginAttempts": 0
+}</pre>
+
+    <h3>6.4 Forgot Password / Password Reset</h3>
+    <p>This flow is public but only available for <code>PATIENT</code> and <code>CUSTOMER</code> accounts. Admin and staff accounts must be managed by an admin.</p>
+
+    <h3>Send OTP</h3>
+    <table>
+      <thead>
+      <tr><th>Method</th><th>Endpoint</th><th>Auth</th><th>Purpose</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>POST</td><td><code>/v1/api/otp/send</code></td><td>Public</td><td>Send email OTP for password reset.</td></tr>
+      </tbody>
+    </table>
+
+    <p>Request body:</p>
+    <pre>{
+  "email": "customer@example.com",
+  "purpose": "PASSWORD_RESET"
+}</pre>
+
+    <p>Success response:</p>
+    <pre>{
+  "message": "OTP sent successfully",
+  "email": "customer@example.com",
+  "purpose": "PASSWORD_RESET",
+  "verificationReference": "&lt;otp-reference&gt;",
+  "expiresInSeconds": 300
+}</pre>
+
+    <h3>Verify OTP</h3>
+    <table>
+      <thead>
+      <tr><th>Method</th><th>Endpoint</th><th>Auth</th><th>Purpose</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>POST</td><td><code>/v1/api/otp/verify</code></td><td>Public</td><td>Verify password reset OTP and issue short-lived reset token.</td></tr>
+      </tbody>
+    </table>
+
+    <p>Request body:</p>
+    <pre>{
+  "email": "customer@example.com",
+  "purpose": "PASSWORD_RESET",
+  "otp": "123456"
+}</pre>
+
+    <p>Success response:</p>
+    <pre>{
+  "message": "OTP verified successfully. Please set a new password.",
+  "email": "customer@example.com",
+  "purpose": "PASSWORD_RESET",
+  "verified": true,
+  "resetToken": "&lt;one-time-reset-token&gt;"
+}</pre>
+
+    <h3>Reset Password</h3>
+    <table>
+      <thead>
+      <tr><th>Method</th><th>Endpoint</th><th>Auth</th><th>Purpose</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>POST</td><td><code>/v1/api/otp/reset-password</code></td><td>Public reset token</td><td>Replace the account password after OTP verification.</td></tr>
+      </tbody>
+    </table>
+
+    <p>Request body:</p>
+    <pre>{
+  "email": "customer@example.com",
+  "resetToken": "&lt;one-time-reset-token&gt;",
+  "newPassword": "Newpass@123",
+  "confirmPassword": "Newpass@123"
+}</pre>
+
+    <p>Success response:</p>
+    <pre>{
+  "message": "Password reset successfully",
+  "email": "customer@example.com",
+  "role": "CUSTOMER",
+  "accountLocked": false,
+  "failedLoginAttempts": 0
+}</pre>
+
+    <ul>
+      <li><code>resetToken</code> is generated only after successful password-reset OTP verification.</li>
+      <li><code>resetToken</code> must be stored as a hash and must expire after 10 minutes.</li>
+      <li><code>newPassword</code> and <code>confirmPassword</code> must match.</li>
+      <li>New password must meet password strength rules.</li>
+      <li>Password is updated in <code>users.password</code> for <code>PATIENT</code> accounts.</li>
+      <li>Password is updated in <code>pharmacyusers.password</code> for <code>CUSTOMER</code> accounts.</li>
+      <li>Successful reset must clear <code>account_locked</code> and reset <code>failed_login_attempts</code> to 0.</li>
+      <li>Reset token must be single-use.</li>
+    </ul>
+
+    <h3>6.5 First Login Password Change</h3>
+    <p>This flow is for admin-created accounts that login successfully with a temporary password and receive <code>mustChangePassword = true</code>. It applies to admin-created <code>ADMIN</code>, staff, HMS <code>PATIENT</code>, and pharmacy <code>CUSTOMER</code> accounts.</p>
+
+    <table>
+      <thead>
+      <tr><th>Method</th><th>Endpoint</th><th>Auth</th><th>Purpose</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>POST</td><td><code>/v1/api/reg/first-login/change-password</code></td><td>Bearer access token</td><td>Replace the temporary password and clear the first-login password flag.</td></tr>
+      </tbody>
+    </table>
+
+    <p>Request body:</p>
+    <pre>{
+  "oldPassword": "Staff@123",
+  "newPassword": "NewStaff@123",
+  "confirmPassword": "NewStaff@123"
+}</pre>
+
+    <p>Success response:</p>
+    <pre>{
+  "message": "Password changed successfully. Account is ready to use.",
+  "userId": 303,
+  "username": "nurse_shyam",
+  "role": "NURSE",
+  "orgId": "HMS001",
+  "isActive": true,
+  "mustChangePassword": false
+}</pre>
+
+    <ul>
+      <li>New password and confirm password must match.</li>
+      <li>New password must meet password strength rules.</li>
+      <li>Old temporary password must match the current encoded password.</li>
+      <li>Successful change updates <code>users.password</code> or <code>pharmacyusers.password</code> based on account type.</li>
+      <li>Successful change clears <code>must_change_password</code> and allows normal dashboard access.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2 id="organisation-requirements">7. Organisation Requirements</h2>
+    <ul>
+      <li>User record must contain <code>orgId</code>.</li>
+      <li>Login token must include the user's <code>orgId</code>.</li>
+      <li>Backend DB user should be mapped with the correct organisation.</li>
+      <li>Login response must include the user's organisation ID, organisation name, and logo URL for frontend convenience.</li>
+      <li>A pharmacy-only package and enterprise package can share the same login API; package separation is enforced through different organisations and role-based authorization.</li>
+    </ul>
+
+    <table>
+      <thead>
+      <tr><th>Method</th><th>Endpoint</th><th>Purpose</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>GET</td><td><code>/v1/api/public/organisations/resolve?key={key}</code></td><td>Resolve active organisation by ID, name, or slug-like key.</td></tr>
+      </tbody>
+    </table>
+
+    <p>Request:</p>
+    <pre>GET /v1/api/public/organisations/resolve?key=city-pharmacy</pre>
+
+    <p>Success response:</p>
+    <pre>{
+  "orgId": "ORG-001",
+  "organisationName": "City Pharmacy",
+  "orgStatus": "ACTIVE",
+  "logoUrl": "https://cdn.example.com/logo.png",
+  "maxLoginAttempts": 3
+}</pre>
+
+    <div class="note">
+      Frontend should resolve the organisation before login and display the organisation name/logo. Login must use the organisation from the stored user record, not a client-provided organisation value.
+    </div>
+  </section>
+
+  <section>
+    <h2 id="database-requirements">8. Database Requirements</h2>
+    <h3>Users Table</h3>
+    <table>
+      <thead>
+      <tr><th>Field</th><th>Rule</th></tr>
+      </thead>
+      <tbody>
+      <tr><td><code>user_id</code></td><td>Primary key.</td></tr>
+      <tr><td><code>username</code></td><td>Unique login identifier.</td></tr>
+      <tr><td><code>email</code></td><td>Unique login identifier, case-insensitive lookup.</td></tr>
+      <tr><td><code>phone</code></td><td>Unique login identifier.</td></tr>
+      <tr><td><code>password</code></td><td>Encoded password.</td></tr>
+      <tr><td><code>role</code></td><td>Must match a supported role.</td></tr>
+      <tr><td><code>org_id</code></td><td>Required organisation mapping.</td></tr>
+      <tr><td><code>is_active</code></td><td>Must be true for login.</td></tr>
+      <tr><td><code>failed_login_attempts</code></td><td>Number of consecutive failed password attempts.</td></tr>
+      <tr><td><code>account_locked</code></td><td>Must be false for login.</td></tr>
+      <tr><td><code>must_change_password</code></td><td>When true, login response returns <code>mustChangePassword = true</code> and frontend must require first-login password change.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Pharmacy Users Table</h3>
+    <table>
+      <thead>
+      <tr><th>Field</th><th>Rule</th></tr>
+      </thead>
+      <tbody>
+      <tr><td><code>pharmacy_user_id</code></td><td>Primary key and login response ID for <code>CUSTOMER</code> accounts.</td></tr>
+      <tr><td><code>user_id</code></td><td>Nullable legacy/optional link; self-registered customers must not require a <code>users</code> row.</td></tr>
+      <tr><td><code>username</code></td><td>Unique login identifier.</td></tr>
+      <tr><td><code>email_address</code></td><td>Unique login identifier, case-insensitive lookup.</td></tr>
+      <tr><td><code>phone_number</code></td><td>Unique login identifier.</td></tr>
+      <tr><td><code>password</code></td><td>Encoded password for customer login.</td></tr>
+      <tr><td><code>role</code></td><td>Must be <code>CUSTOMER</code>.</td></tr>
+      <tr><td><code>org_id</code></td><td>Required organisation mapping.</td></tr>
+      <tr><td><code>is_active</code></td><td>Must be true after email OTP account confirmation.</td></tr>
+      <tr><td><code>failed_login_attempts</code></td><td>Number of consecutive failed password attempts.</td></tr>
+      <tr><td><code>account_locked</code></td><td>Must be false for login.</td></tr>
+      <tr><td><code>must_change_password</code></td><td>When true for admin-created customers, login response returns <code>mustChangePassword = true</code> and frontend must require first-login password change.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Organisation Table</h3>
+    <table>
+      <thead>
+      <tr><th>Field</th><th>Rule</th></tr>
+      </thead>
+      <tbody>
+      <tr><td><code>id</code></td><td>Organisation ID used as <code>orgId</code>.</td></tr>
+      <tr><td><code>organisation_name</code></td><td>Returned in login and organisation resolve responses.</td></tr>
+      <tr><td><code>logo_url</code></td><td>Returned in login and organisation resolve responses.</td></tr>
+      <tr><td><code>max_login_attempts</code></td><td>Failed login limit for users in the organisation. Default is 3.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Refresh Token Table</h3>
+    <table>
+      <thead>
+      <tr><th>Field</th><th>Rule</th></tr>
+      </thead>
+      <tbody>
+      <tr><td><code>token</code></td><td>Random refresh token value.</td></tr>
+      <tr><td><code>user</code></td><td>Linked HMS user for normal users. Nullable for standalone pharmacy customers.</td></tr>
+      <tr><td><code>pharmacy_user</code></td><td>Linked pharmacy customer user. Nullable for normal users.</td></tr>
+      <tr><td><code>device_id</code></td><td>Device identifier from request.</td></tr>
+      <tr><td><code>device_name</code></td><td>Captured from User-Agent.</td></tr>
+      <tr><td><code>device_type</code></td><td>WEB, ANDROID, IOS, or MOBILE.</td></tr>
+      <tr><td><code>ip_address</code></td><td>Captured from request.</td></tr>
+      <tr><td><code>expiry_date</code></td><td>Current time plus 7 days.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Token Blacklist Table</h3>
+    <p>Used to invalidate old access tokens during refresh, logout, or same-device re-login when an old bearer token is provided.</p>
+
+    <h3>Email OTP Table</h3>
+    <table>
+      <thead>
+      <tr><th>Field</th><th>Rule</th></tr>
+      </thead>
+      <tbody>
+      <tr><td><code>email</code></td><td>OTP recipient.</td></tr>
+      <tr><td><code>purpose</code></td><td><code>ACCOUNT_CONFIRMATION</code> or <code>PASSWORD_RESET</code>.</td></tr>
+      <tr><td><code>otp_hash</code></td><td>Encoded OTP value.</td></tr>
+      <tr><td><code>verification_reference</code></td><td>Unique reference for audit/tracking.</td></tr>
+      <tr><td><code>attempt_count</code></td><td>Number of failed OTP attempts.</td></tr>
+      <tr><td><code>max_attempts</code></td><td>OTP attempt limit.</td></tr>
+      <tr><td><code>expires_at</code></td><td>OTP expiry time.</td></tr>
+      <tr><td><code>consumed_at</code></td><td>Set when OTP is verified.</td></tr>
+      <tr><td><code>password_reset_token_hash</code></td><td>Encoded one-time reset token for password reset.</td></tr>
+      <tr><td><code>password_reset_token_expires_at</code></td><td>Reset token expiry time.</td></tr>
+      <tr><td><code>password_reset_used_at</code></td><td>Set when password reset is completed.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Complete Table and Column Inventory</h3>
+    <p>The login, registration, lockout, refresh-token, logout, organisation, and forgot-password flows depend on the following tables and columns.</p>
+
+    <table>
+      <thead>
+      <tr><th>Table</th><th>Columns</th><th>Primary Usage</th></tr>
+      </thead>
+      <tbody>
+      <tr>
+        <td><code>users</code></td>
+        <td><code>user_id</code>, <code>username</code>, <code>first_name</code>, <code>last_name</code>, <code>email</code>, <code>phone</code>, <code>password</code>, <code>role</code>, <code>address</code>, <code>org_id</code>, <code>is_active</code>, <code>failed_login_attempts</code>, <code>account_locked</code>, <code>created_at</code>, <code>updated_at</code>, <code>created_by_type</code>, <code>created_by_user_id</code></td>
+        <td>Primary HMS login account table for admin, staff, and patient users.</td>
+      </tr>
+      <tr>
+        <td><code>pharmacyusers</code></td>
+        <td><code>pharmacy_user_id</code>, <code>user_id</code>, <code>username</code>, <code>first_name</code>, <code>last_name</code>, <code>role</code>, <code>password</code>, <code>phone_number</code>, <code>email_address</code>, <code>address</code>, <code>org_id</code>, <code>is_active</code>, <code>failed_login_attempts</code>, <code>account_locked</code>, <code>created_at</code>, <code>updated_at</code></td>
+        <td>Standalone pharmacy customer account table. Self-registered <code>CUSTOMER</code> records must sit here only.</td>
+      </tr>
+      <tr>
+        <td><code>organisation</code></td>
+        <td><code>id</code>, <code>organisation_name</code>, <code>license_number</code>, <code>gst_number</code>, <code>owner_name</code>, <code>phone</code>, <code>email</code>, <code>org_status</code>, <code>logo_url</code>, <code>max_login_attempts</code>, <code>updated_by</code>, <code>created_at</code>, <code>updated_at</code></td>
+        <td>Organisation resolution, branding in login response/UI, active organisation validation, and login lockout policy.</td>
+      </tr>
+      <tr>
+        <td><code>refresh_tokens</code></td>
+        <td><code>id</code>, <code>token</code>, <code>user_id</code>, <code>pharmacy_user_id</code>, <code>device_id</code>, <code>device_name</code>, <code>device_type</code>, <code>ip_address</code>, <code>expiry_date</code>, <code>created_at</code></td>
+        <td>Device-bound refresh token storage for normal HMS users and standalone pharmacy customers.</td>
+      </tr>
+      <tr>
+        <td><code>token_blacklist</code></td>
+        <td><code>id</code>, <code>token</code>, <code>user_id</code>, <code>pharmacy_user_id</code>, <code>blacklisted_at</code>, <code>expiry_date</code>, <code>reason</code></td>
+        <td>Access token invalidation for logout, refresh rotation, and same-device re-login.</td>
+      </tr>
+      <tr>
+        <td><code>email_otps</code></td>
+        <td><code>otp_id</code>, <code>email</code>, <code>purpose</code>, <code>otp_hash</code>, <code>verification_reference</code>, <code>attempt_count</code>, <code>max_attempts</code>, <code>expires_at</code>, <code>consumed_at</code>, <code>password_reset_token_hash</code>, <code>password_reset_token_expires_at</code>, <code>password_reset_used_at</code>, <code>last_sent_at</code>, <code>created_at</code></td>
+        <td>Email OTP state for account confirmation and forgot-password reset-token handoff.</td>
+      </tr>
+      <tr>
+        <td><code>admins</code></td>
+        <td><code>admin_id</code>, <code>user_id</code>, <code>employee_id</code>, <code>department</code>, <code>designation</code>, <code>is_super_admin</code>, <code>created_at</code>, <code>updated_at</code></td>
+        <td>Admin role profile linked to <code>users.user_id</code>.</td>
+      </tr>
+      <tr>
+        <td><code>patients</code></td>
+        <td><code>patient_id</code>, <code>user_id</code>, <code>first_name</code>, <code>last_name</code>, <code>date_of_birth</code>, <code>age</code>, <code>aadhar_number</code>, <code>emergency_contact_name</code>, <code>emergency_contact_number</code>, <code>blood_group</code>, <code>gender</code>, <code>created_at</code>, <code>updated_at</code></td>
+        <td>Patient role profile linked to <code>users.user_id</code>.</td>
+      </tr>
+      <tr>
+        <td><code>doctors</code></td>
+        <td><code>doctor_id</code>, <code>user_id</code>, <code>first_name</code>, <code>last_name</code>, <code>date_of_birth</code>, <code>age</code>, <code>aadhar_number</code>, <code>emergency_contact_name</code>, <code>emergency_contact_number</code>, <code>blood_group</code>, <code>gender</code>, <code>specialization</code>, <code>license_number</code>, <code>department</code>, <code>employee_id</code>, <code>created_at</code>, <code>updated_at</code></td>
+        <td>Doctor role profile linked to <code>users.user_id</code>.</td>
+      </tr>
+      <tr>
+        <td><code>nurses</code></td>
+        <td><code>nurse_id</code>, <code>user_id</code>, <code>first_name</code>, <code>last_name</code>, <code>date_of_birth</code>, <code>age</code>, <code>aadhar_number</code>, <code>emergency_contact_name</code>, <code>emergency_contact_number</code>, <code>blood_group</code>, <code>gender</code>, <code>department</code>, <code>employee_id</code>, <code>created_at</code>, <code>updated_at</code></td>
+        <td>Nurse role profile linked to <code>users.user_id</code>.</td>
+      </tr>
+      <tr>
+        <td><code>pharmacists</code></td>
+        <td><code>pharmacist_id</code>, <code>user_id</code>, <code>first_name</code>, <code>last_name</code>, <code>date_of_birth</code>, <code>age</code>, <code>aadhar_number</code>, <code>emergency_contact_name</code>, <code>emergency_contact_number</code>, <code>blood_group</code>, <code>gender</code>, <code>department</code>, <code>employee_id</code>, <code>created_at</code>, <code>updated_at</code></td>
+        <td>Pharmacist staff profile linked to <code>users.user_id</code>.</td>
+      </tr>
+      <tr>
+        <td><code>lab_staff</code></td>
+        <td><code>lab_staff_id</code>, <code>user_id</code>, <code>first_name</code>, <code>last_name</code>, <code>date_of_birth</code>, <code>age</code>, <code>aadhar_number</code>, <code>emergency_contact_name</code>, <code>emergency_contact_number</code>, <code>blood_group</code>, <code>gender</code>, <code>department</code>, <code>employee_id</code>, <code>created_at</code>, <code>updated_at</code></td>
+        <td>Lab staff profile linked to <code>users.user_id</code>.</td>
+      </tr>
+      <tr>
+        <td><code>billing_staff</code></td>
+        <td><code>billing_staff_id</code>, <code>user_id</code>, <code>first_name</code>, <code>last_name</code>, <code>date_of_birth</code>, <code>age</code>, <code>aadhar_number</code>, <code>emergency_contact_name</code>, <code>emergency_contact_number</code>, <code>blood_group</code>, <code>gender</code>, <code>department</code>, <code>employee_id</code>, <code>created_at</code>, <code>updated_at</code></td>
+        <td>Billing staff profile linked to <code>users.user_id</code>.</td>
+      </tr>
+      <tr>
+        <td><code>other_staff</code></td>
+        <td><code>other_staff_id</code>, <code>user_id</code>, <code>first_name</code>, <code>last_name</code>, <code>date_of_birth</code>, <code>age</code>, <code>aadhar_number</code>, <code>emergency_contact_name</code>, <code>emergency_contact_number</code>, <code>blood_group</code>, <code>gender</code>, <code>department</code>, <code>employee_id</code>, <code>created_at</code>, <code>updated_at</code></td>
+        <td>Other staff profile linked to <code>users.user_id</code>.</td>
+      </tr>
+      </tbody>
+    </table>
+
+    <h3>Indexes, Keys, and Foreign Keys</h3>
+    <table>
+      <thead>
+      <tr><th>Table</th><th>Keys and Indexes</th></tr>
+      </thead>
+      <tbody>
+      <tr><td><code>users</code></td><td>Primary key: <code>user_id</code>. Unique: <code>username</code>, <code>email</code>, <code>phone</code>. Indexes: <code>idx_is_active</code>, <code>idx_account_locked</code>, <code>idx_org_id</code>, <code>idx_role</code>.</td></tr>
+      <tr><td><code>pharmacyusers</code></td><td>Primary key: <code>pharmacy_user_id</code>. Unique: <code>user_id</code>, <code>username</code>, <code>phone_number</code>, <code>email_address</code>. Foreign key: <code>user_id</code> references <code>users(user_id)</code> with <code>ON DELETE SET NULL</code>. Indexes: <code>idx_pharmacyusers_user</code>, <code>idx_pharmacyusers_org_id</code>, <code>idx_pharmacyusers_is_active</code>, <code>idx_pharmacyusers_account_locked</code>, <code>idx_pharmacyusers_phone_number</code>, <code>idx_pharmacyusers_email_address</code>.</td></tr>
+      <tr><td><code>organisation</code></td><td>Primary key: <code>id</code>. Unique: <code>organisation_name</code>. Foreign key: <code>updated_by</code> references <code>users(user_id)</code> with <code>ON DELETE SET NULL</code>.</td></tr>
+      <tr><td><code>refresh_tokens</code></td><td>Primary key: <code>id</code>. Unique: <code>token</code>. Foreign keys: <code>user_id</code> references <code>users(user_id)</code>, <code>pharmacy_user_id</code> references <code>pharmacyusers(pharmacy_user_id)</code>. Indexes: <code>idx_user_id</code>, <code>idx_refresh_tokens_pharmacy_user_id</code>, <code>idx_device_id</code>, <code>idx_token</code>.</td></tr>
+      <tr><td><code>token_blacklist</code></td><td>Primary key: <code>id</code>. Foreign keys: <code>user_id</code> references <code>users(user_id)</code>, <code>pharmacy_user_id</code> references <code>pharmacyusers(pharmacy_user_id)</code>. Indexes: <code>idx_blacklist_token</code>, <code>idx_token_blacklist_pharmacy_user_id</code>.</td></tr>
+      <tr><td><code>email_otps</code></td><td>Primary key: <code>otp_id</code>. Unique: <code>verification_reference</code>. Indexes: <code>idx_email_otp_email_purpose</code>, <code>idx_email_otp_reference</code>, <code>idx_email_otp_password_reset</code>.</td></tr>
+      <tr><td>Role profile tables</td><td><code>admins</code>, <code>patients</code>, <code>doctors</code>, <code>nurses</code>, <code>pharmacists</code>, <code>lab_staff</code>, <code>billing_staff</code>, and <code>other_staff</code> each have their own primary key, a unique <code>user_id</code>, and a foreign key to <code>users(user_id)</code>.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2 id="validation-rules">9. Validation Rules</h2>
+    <ul>
+      <li><code>loginId</code> is required.</li>
+      <li><code>password</code> is required.</li>
+      <li><code>deviceId</code> should be required for reliable device-specific token control.</li>
+      <li>User must exist by username, email, or phone.</li>
+      <li>User must be active.</li>
+      <li>User must not be locked.</li>
+      <li>Failed password attempts must increment <code>failed_login_attempts</code>.</li>
+      <li>When failed attempts reach <code>organisation.max_login_attempts</code>, account must be locked.</li>
+      <li>Successful login must reset failed login attempts.</li>
+      <li>New-device login must be rejected when the user already has 3 active refresh-token device sessions.</li>
+      <li>Refresh token must exist.</li>
+      <li>Refresh token must not be expired.</li>
+      <li>Refresh token device ID must match the request device ID.</li>
+      <li>Token response must not include password or password hash.</li>
+      <li>Forgot-password OTP send must reject unknown accounts.</li>
+      <li>Forgot-password OTP send and verify must reject admin/staff roles for self-service reset.</li>
+      <li>Password reset must require verified OTP, valid reset token, matching passwords, and strong password format.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2 id="error-handling">10. Error Handling</h2>
+    <table>
+      <thead>
+      <tr><th>Status</th><th>Scenario</th><th>Expected Rule</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>400</td><td>Missing required field</td><td>Return validation error.</td></tr>
+      <tr><td>400</td><td>Invalid refresh token or expired refresh token</td><td>Reject refresh request.</td></tr>
+      <tr><td>401</td><td>Invalid login ID/password</td><td>Reject login.</td></tr>
+      <tr><td>403</td><td>Account disabled</td><td>Reject login.</td></tr>
+      <tr><td>423</td><td>Account locked for admin/staff roles</td><td>Reject login until admin unlock.</td></tr>
+      <tr><td>423</td><td>Account locked for <code>PATIENT</code>/<code>CUSTOMER</code> roles</td><td>Reject login and direct user to forgot-password email verification.</td></tr>
+      <tr><td>429</td><td>Maximum active devices reached</td><td>Reject new-device login.</td></tr>
+      <tr><td>404</td><td>Organisation key not found on public resolve</td><td>Return organisation not found or inactive.</td></tr>
+      </tbody>
+    </table>
+    <div class="warning">Implementation note: current service throws runtime exceptions for some cases. For consistent API behavior, map these exceptions to stable error responses through a global exception handler.</div>
+  </section>
+
+  <section>
+    <h2 id="security-rules">11. Security Rules</h2>
+    <ul>
+      <li>Password must never be logged or returned.</li>
+      <li>Access token should be short-lived.</li>
+      <li>Refresh token must expire after 7 days.</li>
+      <li>Refresh token must be rotated on each refresh.</li>
+      <li>Refresh token cookie must be HttpOnly.</li>
+      <li>Access token should be sent as <code>Authorization: Bearer &lt;accessToken&gt;</code> for protected APIs.</li>
+      <li>JWT must include role and organisation ID claims.</li>
+      <li>Role checks for protected APIs must use the role claim.</li>
+      <li>Same-device re-login should invalidate the previous refresh token.</li>
+      <li>Users may login on up to 3 active devices.</li>
+      <li>Failed login lockout limit is organisation-specific and defaults to 3.</li>
+      <li>Admins can update an organisation's max login attempts and unlock locked accounts.</li>
+      <li>Forgot-password reset tokens must be one-time use, hashed at rest, and short-lived.</li>
+      <li>Customer password reset must update <code>pharmacyusers.password</code>, not <code>users.password</code>.</li>
+      <li>First-login temporary-password flow must not expose the temporary password after account creation.</li>
+      <li>First-login password change must require the authenticated bearer token from the temporary-password login.</li>
+      <li>Users with <code>mustChangePassword = true</code> must be blocked by frontend from normal dashboard use until password change succeeds.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2 id="development-notes">12. Development Notes</h2>
+    <ul>
+      <li>Controller: <code>src/main/java/com/hms/login/controller/LoginController.java</code></li>
+      <li>Service: <code>src/main/java/com/hms/login/service/impl/LoginServiceImpl.java</code></li>
+      <li>Request DTO: <code>src/main/java/com/hms/login/dto/LoginRequest.java</code></li>
+      <li>Response DTO: <code>src/main/java/com/hms/login/dto/LoginResponse.java</code></li>
+      <li>User repository: <code>src/main/java/com/hms/Register/repository/UserRepository.java</code></li>
+      <li>User entity: <code>src/main/java/com/hms/Register/entity/User.java</code></li>
+      <li>Organisation resolver: <code>src/main/java/com/hms/organisation/service/OrganisationResolverService.java</code></li>
+      <li>Pharmacy customer repository: <code>src/main/java/com/hms/Register/repository/PharmacyUserRepository.java</code></li>
+      <li>OTP controller/service: <code>src/main/java/com/hms/common/otp/controller/OtpController.java</code>, <code>src/main/java/com/hms/common/otp/service/EmailOtpService.java</code></li>
+      <li>First-login password change controller: <code>src/main/java/com/hms/Register/controller/RegisterController.java</code></li>
+      <li>Seeders: <code>src/main/java/com/hms/common/config/OrganisationSeeder.java</code>, <code>src/main/java/com/hms/common/config/AdminSeeder.java</code></li>
+    </ul>
+
+    <h3>Suggested Development Improvements</h3>
+    <ul>
+      <li>Add <code>@Valid</code> to login request handling if validation should be enforced by Spring.</li>
+      <li>Make <code>deviceId</code> required in <code>LoginRequest</code>.</li>
+      <li>Standardize role values using <code>UserRole</code> enum wherever possible.</li>
+      <li>Add global exception mapping for login and refresh errors.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2 id="test-checklist">13. Test Checklist</h2>
+    <h3>Unit Tests</h3>
+    <ul>
+      <li>Login succeeds with username.</li>
+      <li>Login succeeds with email.</li>
+      <li>Login succeeds with phone number.</li>
+      <li>Login fails with wrong password.</li>
+      <li>Login fails for inactive user.</li>
+      <li>Login locks account after configured failed attempts.</li>
+      <li>Login rejects locked account.</li>
+      <li>Login creates refresh token for device.</li>
+      <li>Login replaces old refresh token for same user/device.</li>
+      <li>Login rejects new-device login after 3 active device sessions.</li>
+      <li>Login response includes access token, refresh token, user ID, username, first name, last name, role, orgId, organisationName, logoUrl, and <code>mustChangePassword</code>.</li>
+      <li>Admin-created staff login returns <code>mustChangePassword = true</code>.</li>
+      <li>Admin-created pharmacy customer login returns <code>mustChangePassword = true</code>.</li>
+      <li>First-login password change clears <code>must_change_password</code>.</li>
+      <li>Access token includes username, role, and orgId claims.</li>
+      <li>Refresh succeeds with valid token and matching device ID.</li>
+      <li>Refresh fails with expired token.</li>
+      <li>Refresh fails with invalid token.</li>
+      <li>Refresh fails when device ID does not match.</li>
+      <li>Refresh deletes old refresh token and saves new refresh token.</li>
+      <li>Customer registration stores account only in <code>pharmacyusers</code>.</li>
+      <li>Customer login succeeds from <code>pharmacyusers</code> without a linked <code>users</code> row.</li>
+      <li>Customer failed login attempts lock <code>pharmacyusers.account_locked</code>.</li>
+      <li>Password reset OTP verification returns reset token.</li>
+      <li>Password reset updates encoded password, clears failed attempts, unlocks the account, and marks reset token as used.</li>
+      <li>Admin/staff password reset attempt is rejected from self-service flow.</li>
+    </ul>
+
+    <h3>API / Integration Tests</h3>
+    <ul>
+      <li><code>POST /v1/api/login</code> returns 200 for valid credentials.</li>
+      <li><code>POST /v1/api/login</code> sets <code>refresh_token</code> HttpOnly cookie.</li>
+      <li><code>POST /v1/api/refresh</code> accepts refresh token from JSON body.</li>
+      <li><code>POST /v1/api/refresh</code> accepts refresh token from cookie.</li>
+      <li><code>GET /v1/api/public/organisations/resolve</code> resolves active organisation by ID.</li>
+      <li><code>GET /v1/api/public/organisations/resolve</code> resolves active organisation by name.</li>
+      <li><code>GET /v1/api/public/organisations/resolve</code> rejects inactive or unknown organisation.</li>
+      <li><code>PATCH /v1/api/admin/login-policy/organisations/{orgId}</code> updates max login attempts for admin users.</li>
+      <li><code>PATCH /v1/api/admin/login-policy/users/{userId}/unlock</code> unlocks a locked user for admin users.</li>
+      <li><code>POST /v1/api/otp/send</code> sends password reset OTP for <code>PATIENT</code>/<code>CUSTOMER</code>.</li>
+      <li><code>POST /v1/api/otp/verify</code> verifies password reset OTP and returns reset token.</li>
+      <li><code>POST /v1/api/otp/reset-password</code> replaces password and unlocks <code>PATIENT</code>/<code>CUSTOMER</code>.</li>
+      <li><code>POST /v1/api/reg/first-login/change-password</code> replaces temporary password and clears <code>mustChangePassword</code>.</li>
+    </ul>
+
+    <h3>Manual Swagger Testing</h3>
+    <ol>
+      <li>Create or confirm an active user exists.</li>
+      <li>Call <code>/v1/api/login</code> with <code>loginId</code>, <code>password</code>, and <code>deviceId</code>.</li>
+      <li>Copy <code>accessToken</code>.</li>
+      <li>Use Swagger Authorize with only the token value, without <code>Bearer</code>.</li>
+      <li>Call a protected API for the user's role.</li>
+      <li>Call <code>/v1/api/refresh</code> with the refresh token and same device ID.</li>
+      <li>Confirm the old refresh token no longer works.</li>
+      <li>Trigger 3 failed logins for a <code>CUSTOMER</code> account and confirm the UI navigates to forgot password.</li>
+      <li>Complete email OTP verification, set a new password, and confirm login succeeds with the new password.</li>
+      <li>Login with seeded <code>pharmacyadmin</code> / <code>Admin@123</code> to verify pharmacy-only admin access.</li>
+      <li>Create a pharmacy customer as admin, login with the temporary password, confirm <code>mustChangePassword = true</code>, complete first-login password change, and confirm dashboard access.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2 id="resolved-product-decisions">14. Resolved Product Decisions</h2>
+    <ul>
+      <li>Common login API is used for all users, including pharmacy <code>CUSTOMER</code>; organisation/package separation is enforced through <code>orgId</code> and authorization rules.</li>
+      <li>Self-registered <code>PATIENT</code> and <code>CUSTOMER</code> accounts are activated by email OTP verification, not admin approval.</li>
+      <li>Login and refresh responses include <code>userId</code>, <code>orgId</code>, <code>organisationName</code>, and <code>logoUrl</code> for frontend convenience.</li>
+      <li>Failed login attempts lock the account at the organisation-configured limit; default maximum is 3 attempts.</li>
+      <li>Admin users can change the max failed-attempt policy per organisation and unlock locked accounts.</li>
+      <li>Users may have up to 3 active device sessions.</li>
+      <li>Pharmacy <code>CUSTOMER</code> self-registration stores customer accounts only in <code>pharmacyusers</code>.</li>
+      <li><code>PATIENT</code> and <code>CUSTOMER</code> users can self-reset password through email OTP; admin/staff roles remain admin-managed.</li>
+      <li>Forgot-password is a two-step flow: OTP verification creates a short-lived reset token, then reset-password replaces the encoded password in the correct table.</li>
+      <li>Seeded development admins are <code>superadmin</code> for enterprise HMS and <code>pharmacyadmin</code> for pharmacy-only organisation.</li>
+      <li>Admin-created accounts use first-login password change, not self-service forgot-password, for the initial temporary password replacement.</li>
+      <li>Login response includes <code>mustChangePassword</code> so the frontend can show the new-password popup before dashboard access.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2 id="seeded-development-accounts">15. Seeded Development Accounts</h2>
+    <table>
+      <thead>
+      <tr><th>Organisation</th><th>Organisation Type</th><th>Username</th><th>Password</th><th>Purpose</th></tr>
+      </thead>
+      <tbody>
+      <tr><td>HMS</td><td><code>ENTERPRISE_HMS</code></td><td><code>superadmin</code></td><td><code>Admin@123</code></td><td>Default enterprise/HMS admin for local development.</td></tr>
+      <tr><td>PHARMACY</td><td><code>PHARMACY_ONLY</code></td><td><code>pharmacyadmin</code></td><td><code>Admin@123</code></td><td>Default pharmacy-only admin for local development and Swagger testing.</td></tr>
+      </tbody>
+    </table>
+    <div class="warning">Seeded credentials are for local development and test environments only. They must be removed, rotated, or disabled before production deployment.</div>
+  </section>
+</main>
+</body>
+</html>

@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Module RD Template</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #1d2733;
+      background: #ffffff;
+      line-height: 1.55;
+    }
+
+    main {
+      width: min(1000px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 32px 0 56px;
+    }
+
+    header {
+      border-bottom: 3px solid #0f766e;
+      margin-bottom: 28px;
+      padding-bottom: 18px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 34px;
+    }
+
+    h2 {
+      margin: 30px 0 12px;
+      font-size: 22px;
+      border-bottom: 1px solid #d8dee7;
+      padding-bottom: 8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0 18px;
+      font-size: 14px;
+    }
+
+    th,
+    td {
+      border: 1px solid #d8dee7;
+      padding: 9px 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #f6f8fb;
+    }
+
+    code,
+    pre {
+      font-family: Consolas, "Courier New", monospace;
+    }
+
+    code {
+      background: #f6f8fb;
+      padding: 2px 5px;
+      border-radius: 4px;
+    }
+
+    pre {
+      background: #111827;
+      color: #f9fafb;
+      overflow-x: auto;
+      padding: 14px;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>&lt;Module Name&gt; RD</h1>
+    <p>Use this HTML file as the structure for each new module requirements document.</p>
+  </header>
+
+  <h2>1. Purpose</h2>
+  <p>Describe what this module does and why it exists.</p>
+
+  <h2>2. Scope</h2>
+  <p><strong>In Scope:</strong> List included features.</p>
+  <p><strong>Out of Scope:</strong> List items intentionally not included.</p>
+
+  <h2>3. Actors and Roles</h2>
+  <table>
+    <thead><tr><th>Role</th><th>Access / Responsibility</th></tr></thead>
+    <tbody><tr><td>ADMIN</td><td>TBD</td></tr></tbody>
+  </table>
+
+  <h2>4. Functional Requirements</h2>
+  <table>
+    <thead><tr><th>ID</th><th>Requirement</th><th>Priority</th></tr></thead>
+    <tbody><tr><td>FR-001</td><td>TBD</td><td>Must</td></tr></tbody>
+  </table>
+
+  <h2>5. API Requirements</h2>
+  <table>
+    <thead><tr><th>Method</th><th>Endpoint</th><th>Auth</th><th>Purpose</th></tr></thead>
+    <tbody><tr><td>POST</td><td><code>/v1/api/...</code></td><td>TBD</td><td>TBD</td></tr></tbody>
+  </table>
+
+  <p>Request body:</p>
+  <pre>{
+  "field": "value"
+}</pre>
+
+  <p>Success response:</p>
+  <pre>{
+  "message": "Success"
+}</pre>
+
+  <h2>6. Validation Rules</h2>
+  <ul>
+    <li>TBD</li>
+  </ul>
+
+  <h2>7. Database Requirements</h2>
+  <table>
+    <thead><tr><th>Table</th><th>Operation</th><th>Notes</th></tr></thead>
+    <tbody><tr><td>TBD</td><td>Insert / Update / Read</td><td>TBD</td></tr></tbody>
+  </table>
+
+  <h2>8. Security Rules</h2>
+  <ul>
+    <li>Authentication requirements.</li>
+    <li>Authorization requirements.</li>
+    <li>Token/session rules, if any.</li>
+    <li>Sensitive fields that must not be logged or returned.</li>
+  </ul>
+
+  <h2>9. Business Rules</h2>
+  <ul>
+    <li>TBD</li>
+  </ul>
+
+  <h2>10. Development Notes</h2>
+  <ul>
+    <li>Service/class names.</li>
+    <li>Existing utilities to reuse.</li>
+    <li>Integration points with other modules.</li>
+  </ul>
+
+  <h2>11. Test Checklist</h2>
+  <ul>
+    <li>Unit tests: TBD</li>
+    <li>Integration / API tests: TBD</li>
+    <li>Negative tests: TBD</li>
+  </ul>
+
+  <h2>12. Open Questions</h2>
+  <ul>
+    <li>TBD</li>
+  </ul>
+</main>
+</body>
+</html>
